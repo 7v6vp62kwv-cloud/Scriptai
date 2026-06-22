@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Script Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sentient:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Sentient', 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: #f0f0f0;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      background: linear-gradient(90deg, #FCBD2E, #03fcf4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 14px;
+      margin-bottom: 36px;
+    }
+
+    .section {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #FCBD2E;
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: #aaa;
+      margin-bottom: 6px;
+      margin-top: 14px;
+    }
+
+    label:first-of-type { margin-top: 0; }
+
+    input, textarea, select {
+      width: 100%;
+      background: #111;
+      border: 1px solid #2e2e2e;
+      border-radius: 8px;
+      color: #f0f0f0;
+      font-size: 14px;
+      padding: 10px 14px;
+      outline: none;
+      transition: border 0.2s;
+      font-family: inherit;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: #FCBD2E;
+    }
+
+    input[type="password"] {
+      letter-spacing: 2px;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+      line-height: 1.5;
+    }
+
+    select option { background: #1a1a1a; }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      margin-top: 4px;
+    }
+
+    .btn:active { transform: scale(0.99); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-generate {
+      background: linear-gradient(135deg, #FCBD2E, #03fcf4);
+      color: #0f0f0f;
+    }
+
+    .btn-copy {
+      background: #2a2a2a;
+      color: #ccc;
+      font-size: 13px;
+      padding: 10px;
+      margin-top: 14px;
+      border: 1px solid #333;
+    }
+
+    .btn-copy:hover { background: #333; }
+
+    .output-box {
+      background: #111;
+      border: 1px solid #2e2e2e;
+      border-radius: 8px;
+      padding: 18px;
+      font-size: 14px;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      min-height: 120px;
+      color: #e0e0e0;
+    }
+
+    .output-box.empty { color: #444; font-style: italic; }
+
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(3,252,244,0.3);
+      border-top-color: #03fcf4;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .tag {
+      display: inline-block;
+      background: #2a2a2a;
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 10px;
+    }
+
+    .key-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .key-row input { flex: 1; }
+
+    .toggle-key {
+      background: #2a2a2a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #888;
+      font-size: 12px;
+      padding: 10px 14px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .toggle-key:hover { color: #ccc; }
+
+    .error {
+      color: #f87171;
+      font-size: 13px;
+      margin-top: 10px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <h1>Script Generator</h1>
+    <p class="subtitle">Short-form video scripts in your style — Reels, TikTok, Shorts</p>
+
+    <!-- API Key -->
+    <div class="section">
+      <div class="section-title">API Key</div>
+      <label>Anthropic API Key</label>
+      <div class="key-row">
+        <input type="password" id="apiKey" placeholder="sk-ant-..." />
+        <button class="toggle-key" onclick="toggleKey()">Show</button>
+      </div>
+    </div>
+
+    <!-- Script Details -->
+    <div class="section">
+      <div class="section-title">Script Details</div>
+
+      <div class="row">
+        <div>
+          <label>Client Niche</label>
+          <input type="text" id="niche" placeholder="e.g. fitness coaching, real estate" />
+        </div>
+        <div>
+          <label>Platform</label>
+          <select id="platform">
+            <option>Instagram Reels</option>
+            <option>TikTok</option>
+            <option>YouTube Shorts</option>
+          </select>
+        </div>
+      </div>
+
+      <label>Topic / Offer</label>
+      <input type="text" id="topic" placeholder="e.g. why most people fail at losing weight" />
+
+      <label>Target Audience</label>
+      <input type="text" id="audience" placeholder="e.g. busy mums aged 30-45" />
+
+      <div class="row">
+        <div>
+          <label>Tone</label>
+          <select id="tone">
+            <option>Casual & Direct</option>
+            <option>Hype & Energetic</option>
+            <option>Educational</option>
+            <option>Storytelling</option>
+            <option>Sales-Focused</option>
+          </select>
+        </div>
+        <div>
+          <label>Script Length</label>
+          <select id="length">
+            <option>15 seconds (~40 words)</option>
+            <option>30 seconds (~75 words)</option>
+            <option selected>60 seconds (~150 words)</option>
+            <option>90 seconds (~225 words)</option>
+          </select>
+        </div>
+      </div>
+
+      <label>Extra Instructions <span style="color:#555">(optional)</span></label>
+      <textarea id="extra" placeholder="e.g. mention a free guide at the end, avoid mentioning price"></textarea>
+    </div>
+
+    <!-- Generate -->
+    <button class="btn btn-generate" id="generateBtn" onclick="generateScript()">
+      Generate Script
+    </button>
+
+    <div class="error" id="errorMsg"></div>
+
+    <!-- Output -->
+    <div class="section" style="margin-top:20px">
+      <div class="section-title">Output</div>
+      <div class="tag" id="metaTag" style="display:none"></div>
+      <div class="output-box empty" id="output">Your script will appear here...</div>
+      <button class="btn btn-copy" id="copyBtn" onclick="copyScript()" style="display:none">
+        Copy Script
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    const STYLE_PROMPT = `You are a short-form video script writer. Write punchy, engaging scripts that stop the scroll.
+
+STYLE RULES:
+- Hook must grab attention in the first 3 seconds — use a bold claim, surprising fact, or direct question
+- Short sentences. Maximum 10 words each.
+- No filler openers like "Hey guys", "So today", "In this video"
+- Write conversational, like talking to one person
+- Every line earns its place — cut anything that doesn't move the script forward
+- End with a clear, direct CTA (not vague like "let me know below")
+- Use pattern interrupts to keep attention through the middle
+- Write in ALL CAPS for any words that should be emphasised when spoken
+
+FORMAT YOUR OUTPUT EXACTLY LIKE THIS:
+
+🎣 HOOK:
+[hook line]
+
+📽️ BODY:
+[body content — broken into short punchy lines]
+
+📣 CTA:
+[call to action]
+
+---
+🎙️ DELIVERY NOTES:
+[2-3 quick notes on pacing, emphasis, or tone for when recording]`;
+
+    function toggleKey() {
+      const input = document.getElementById('apiKey');
+      const btn = event.target;
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = 'Hide';
+      } else {
+        input.type = 'password';
+        btn.textContent = 'Show';
+      }
+    }
+
+    async function generateScript() {
+      const apiKey = document.getElementById('apiKey').value.trim();
+      const niche = document.getElementById('niche').value.trim();
+      const topic = document.getElementById('topic').value.trim();
+      const audience = document.getElementById('audience').value.trim();
+      const platform = document.getElementById('platform').value;
+      const tone = document.getElementById('tone').value;
+      const length = document.getElementById('length').value;
+      const extra = document.getElementById('extra').value.trim();
+
+      const errorEl = document.getElementById('errorMsg');
+      errorEl.style.display = 'none';
+
+      if (!apiKey) return showError('Please enter your Anthropic API key.');
+      if (!topic) return showError('Please enter a topic or offer.');
+
+      const btn = document.getElementById('generateBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Generating...';
+
+      const outputEl = document.getElementById('output');
+      outputEl.classList.add('empty');
+      outputEl.textContent = 'Writing your script...';
+      document.getElementById('copyBtn').style.display = 'none';
+      document.getElementById('metaTag').style.display = 'none';
+
+      const userPrompt = `Write a ${length} short-form video script for ${platform}.
+
+Client Niche: ${niche || 'General'}
+Topic / Offer: ${topic}
+Target Audience: ${audience || 'General audience'}
+Tone: ${tone}
+${extra ? `Extra Instructions: ${extra}` : ''}`;
+
+      try {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
+          },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-6',
+            max_tokens: 1024,
+            system: STYLE_PROMPT,
+            messages: [{ role: 'user', content: userPrompt }]
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error?.message || `API error ${res.status}`);
+        }
+
+        const data = await res.json();
+        const script = data.content[0].text;
+
+        outputEl.classList.remove('empty');
+        outputEl.textContent = script;
+
+        const metaTag = document.getElementById('metaTag');
+        metaTag.textContent = `${platform} · ${tone} · ${length}`;
+        metaTag.style.display = 'inline-block';
+
+        document.getElementById('copyBtn').style.display = 'block';
+
+      } catch (err) {
+        showError(err.message);
+        outputEl.textContent = 'Your script will appear here...';
+        outputEl.classList.add('empty');
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = 'Generate Script';
+    }
+
+    function copyScript() {
+      const text = document.getElementById('output').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copyBtn');
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = 'Copy Script', 2000);
+      });
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('errorMsg');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+  </script>
+</body>
+</html>

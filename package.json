@@ -1,0 +1,10 @@
+{
+  "name": "scriptwriter",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.24.0",
+    "@supabase/supabase-js": "^2.43.0",
+    "stripe": "^15.0.0"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tmutil listlocalsnapshots *)",
+      "Bash(rm -rf /private/var/folders/sq/l1q1cwz93vg_058p0tvj_swc0000gn/X/com.google.Chrome.code_sign_clone)",
+      "Bash(rm -rf /private/var/folders/sq/l1q1cwz93vg_058p0tvj_swc0000gn/C/*)"
+    ]
+  }
+}
