@@ -37,13 +37,16 @@
   --vt-glass-highlight: rgba(255, 255, 255, 0.95);
   --vt-glass-specular: rgba(255, 255, 255, 0.55);
   --vt-blur: 24px;
+  --vt-blur-btn: 12px;
+  --vt-blur-scrim: 3px;
+  --vt-blur-mesh: 70px;
   --vt-saturate: 180%;
   --vt-scrim: rgba(20, 24, 50, 0.18);
 
   /* Ink */
   --vt-ink: #121424;
   --vt-ink-2: rgba(18, 20, 36, 0.64);
-  --vt-ink-3: rgba(18, 20, 36, 0.42);
+  --vt-ink-3: rgba(18, 20, 36, 0.60);
   --vt-hairline: rgba(18, 20, 36, 0.08);
   --vt-field: rgba(255, 255, 255, 0.55);
 
@@ -52,7 +55,9 @@
   --vt-accent-hi: #7b93f5;
   --vt-accent-ink: #ffffff;
   --vt-accent-soft: rgba(91, 120, 240, 0.14);
-  --vt-focus: rgba(91, 120, 240, 0.60);
+  --vt-accent-glow: rgba(91, 120, 240, 0.28);
+  --vt-accent-glow-hi: rgba(91, 120, 240, 0.36);
+  --vt-focus: #5b78f0;
   --vt-warn: #dc9f47;
   --vt-warn-soft: rgba(220, 159, 71, 0.16);
   --vt-danger: #de5a5f;
@@ -62,8 +67,12 @@
   --vt-shadow-1: 0 1px 2px rgba(22, 26, 52, 0.04), 0 10px 30px rgba(22, 26, 52, 0.07);
   --vt-shadow-2: 0 2px 6px rgba(22, 26, 52, 0.06), 0 22px 56px rgba(22, 26, 52, 0.14);
   --vt-shadow-3: 0 8px 20px rgba(22, 26, 52, 0.10), 0 40px 90px rgba(22, 26, 52, 0.22);
+  --vt-shadow-tint: rgba(22, 26, 52, 0.12);
+  --vt-inset-tint: rgba(22, 26, 52, 0.05);
 
   /* Radii */
+  --vt-r-xs: 10px;
+  --vt-r-bar: 4px;
   --vt-r-sm: 12px;
   --vt-r-md: 16px;
   --vt-r-lg: 22px;
@@ -117,19 +126,23 @@
     --vt-scrim: rgba(0, 0, 0, 0.45);
     --vt-ink: #eef0f7;
     --vt-ink-2: rgba(238, 240, 247, 0.66);
-    --vt-ink-3: rgba(238, 240, 247, 0.42);
+    --vt-ink-3: rgba(238, 240, 247, 0.62);
     --vt-hairline: rgba(255, 255, 255, 0.08);
     --vt-field: rgba(255, 255, 255, 0.06);
     --vt-accent: #7b93f5;
     --vt-accent-hi: #96aaf8;
     --vt-accent-ink: #0e1017;
     --vt-accent-soft: rgba(123, 147, 245, 0.18);
+    --vt-accent-glow: rgba(123, 147, 245, 0.30);
+    --vt-accent-glow-hi: rgba(123, 147, 245, 0.40);
     --vt-focus: rgba(150, 170, 248, 0.70);
     --vt-warn-soft: rgba(220, 159, 71, 0.22);
     --vt-danger-soft: rgba(222, 90, 95, 0.18);
     --vt-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.30), 0 10px 30px rgba(0, 0, 0, 0.35);
     --vt-shadow-2: 0 2px 6px rgba(0, 0, 0, 0.35), 0 22px 56px rgba(0, 0, 0, 0.45);
     --vt-shadow-3: 0 8px 20px rgba(0, 0, 0, 0.40), 0 40px 90px rgba(0, 0, 0, 0.55);
+    --vt-shadow-tint: rgba(0, 0, 0, 0.35);
+    --vt-inset-tint: rgba(0, 0, 0, 0.25);
   }
 }
 :root[data-theme="dark"] {
@@ -149,28 +162,32 @@
   --vt-scrim: rgba(0, 0, 0, 0.45);
   --vt-ink: #eef0f7;
   --vt-ink-2: rgba(238, 240, 247, 0.66);
-  --vt-ink-3: rgba(238, 240, 247, 0.42);
+  --vt-ink-3: rgba(238, 240, 247, 0.62);
   --vt-hairline: rgba(255, 255, 255, 0.08);
   --vt-field: rgba(255, 255, 255, 0.06);
   --vt-accent: #7b93f5;
   --vt-accent-hi: #96aaf8;
   --vt-accent-ink: #0e1017;
   --vt-accent-soft: rgba(123, 147, 245, 0.18);
+  --vt-accent-glow: rgba(123, 147, 245, 0.30);
+  --vt-accent-glow-hi: rgba(123, 147, 245, 0.40);
   --vt-focus: rgba(150, 170, 248, 0.70);
   --vt-warn-soft: rgba(220, 159, 71, 0.22);
   --vt-danger-soft: rgba(222, 90, 95, 0.18);
   --vt-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.30), 0 10px 30px rgba(0, 0, 0, 0.35);
   --vt-shadow-2: 0 2px 6px rgba(0, 0, 0, 0.35), 0 22px 56px rgba(0, 0, 0, 0.45);
   --vt-shadow-3: 0 8px 20px rgba(0, 0, 0, 0.40), 0 40px 90px rgba(0, 0, 0, 0.55);
+  --vt-shadow-tint: rgba(0, 0, 0, 0.35);
+  --vt-inset-tint: rgba(0, 0, 0, 0.25);
 }
 
 /* ----- 2. Base ----------------------------------------------------------- */
-*, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
-body {
-  margin: 0;
-  min-height: 100vh;
-  background: var(--vt-bg);
+/* Standalone page only. The hub owns its own body styles, so drop this one rule when merging. */
+body { margin: 0; min-height: 100vh; background: var(--vt-bg); -webkit-text-size-adjust: 100%; }
+
+/* Everything below is scoped to the tracker root (.vt) and the mesh. */
+.vt, .vt *, .vt *::before, .vt *::after, .vt-mesh, .vt-mesh * { box-sizing: border-box; }
+.vt {
   color: var(--vt-ink);
   font-family: var(--vt-font);
   font-size: var(--vt-fs-body);
@@ -186,10 +203,11 @@ body {
 .vt :is(button, a, input, select, textarea, [tabindex]):focus-visible {
   outline: 2px solid var(--vt-focus);
   outline-offset: 2px;
-  border-radius: var(--vt-r-sm);
 }
+/* Controls that carry their own focus treatment (glow, highlight) skip the ring. */
+.vt .vt-search input:focus-visible, .vt .vt-field:focus-visible, .vt .vt-menu-item:focus-visible { outline: none; }
 .vt-sr { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-[hidden] { display: none !important; }
+.vt [hidden], .vt-mesh[hidden] { display: none !important; }
 
 /* ----- 3. Mesh background ------------------------------------------------ */
 .vt-mesh {
@@ -199,10 +217,10 @@ body {
 }
 .vt-blob {
   position: absolute; border-radius: 50%;
-  filter: blur(70px);
+  filter: blur(var(--vt-blur-mesh));
   opacity: var(--vt-blob-opacity);
   will-change: transform;
-  animation: vt-drift 46s var(--vt-ease) infinite alternate;
+  animation: vt-drift 46s ease-in-out infinite alternate;
 }
 .vt-blob-1 { width: 60vmax; height: 60vmax; left: -18vmax; top: -22vmax; background: radial-gradient(circle at 35% 35%, var(--vt-blob-1), transparent 68%); }
 .vt-blob-2 { width: 56vmax; height: 56vmax; right: -20vmax; top: -8vmax; background: radial-gradient(circle at 50% 50%, var(--vt-blob-2), transparent 68%); animation-duration: 58s; animation-delay: -12s; }
@@ -242,9 +260,9 @@ body {
 }
 .vt-brand { display: flex; align-items: center; gap: 10px; margin-right: auto; min-width: 0; }
 .vt-brand-mark {
-  width: 30px; height: 30px; border-radius: 10px; flex: none;
+  width: 30px; height: 30px; border-radius: var(--vt-r-xs); flex: none;
   background: linear-gradient(145deg, var(--vt-stage-1), var(--vt-stage-3) 55%, var(--vt-stage-5));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 4px 12px rgba(22,26,52,.12);
+  box-shadow: inset 0 1px 0 var(--vt-glass-highlight), 0 4px 12px var(--vt-shadow-tint);
 }
 .vt-brand strong { display: block; font-weight: 600; letter-spacing: -0.01em; line-height: 1.1; }
 .vt-brand span { display: block; color: var(--vt-ink-3); font-size: var(--vt-fs-small); line-height: 1.2; }
@@ -255,7 +273,7 @@ body {
   border-radius: var(--vt-r-pill);
   background: var(--vt-glass-soft);
   border: 1px solid var(--vt-glass-border);
-  box-shadow: inset 0 1px 2px rgba(22,26,52,.05);
+  box-shadow: inset 0 1px 2px var(--vt-inset-tint);
 }
 .vt-seg button {
   height: 32px; padding: 0 16px; border: 0; border-radius: var(--vt-r-pill);
@@ -278,7 +296,7 @@ body {
   color: var(--vt-ink);
   font-weight: 500; line-height: 1; white-space: nowrap;
   box-shadow: var(--vt-shadow-1), inset 0 1px 0 var(--vt-glass-highlight);
-  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(var(--vt-blur-btn)); backdrop-filter: blur(var(--vt-blur-btn));
   transition: transform var(--vt-fast) var(--vt-ease), box-shadow var(--vt-fast) var(--vt-ease), background var(--vt-fast), opacity var(--vt-fast);
 }
 .vt-btn:hover { transform: translateY(-1px); box-shadow: var(--vt-shadow-2), inset 0 1px 0 var(--vt-glass-highlight); }
@@ -288,9 +306,9 @@ body {
 .vt-btn-primary {
   background: linear-gradient(180deg, var(--vt-accent-hi), var(--vt-accent));
   color: var(--vt-accent-ink); border-color: transparent;
-  box-shadow: 0 1px 2px rgba(22,26,52,.08), 0 10px 24px rgba(91,120,240,.28), inset 0 1px 0 rgba(255,255,255,.35);
+  box-shadow: var(--vt-shadow-1), 0 10px 24px var(--vt-accent-glow), inset 0 1px 0 var(--vt-glass-highlight);
 }
-.vt-btn-primary:hover { box-shadow: 0 2px 6px rgba(22,26,52,.1), 0 16px 36px rgba(91,120,240,.36), inset 0 1px 0 rgba(255,255,255,.35); }
+.vt-btn-primary:hover { box-shadow: var(--vt-shadow-2), 0 16px 36px var(--vt-accent-glow-hi), inset 0 1px 0 var(--vt-glass-highlight); }
 .vt-btn-ghost { background: transparent; border-color: transparent; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; color: var(--vt-ink-2); }
 .vt-btn-ghost:hover { background: var(--vt-accent-soft); color: var(--vt-ink); box-shadow: none; }
 .vt-btn-danger { color: var(--vt-danger); }
@@ -299,7 +317,7 @@ body {
 .vt-icon-btn {
   display: inline-flex; align-items: center; justify-content: center;
   width: 30px; height: 30px; border-radius: var(--vt-r-pill);
-  border: 0; background: transparent; color: var(--vt-ink-3);
+  border: 0; background: transparent; color: var(--vt-ink-2);
   transition: background var(--vt-fast), color var(--vt-fast), transform var(--vt-fast) var(--vt-ease);
 }
 .vt-icon-btn:hover { background: var(--vt-accent-soft); color: var(--vt-ink); }
@@ -331,7 +349,9 @@ body {
 }
 .vt-chip:hover { transform: translateY(-1px); background: var(--vt-glass); color: var(--vt-ink); }
 .vt-chip[aria-pressed="true"] { background: var(--vt-ink); color: var(--vt-bg); border-color: transparent; box-shadow: var(--vt-shadow-1); }
-.vt-chip .vt-count { font-size: 11px; opacity: .75; }
+.vt-chip .vt-count { font-size: var(--vt-fs-small); }
+.vt-chip[aria-pressed="true"] .vt-count { color: inherit; background: color-mix(in srgb, currentColor 18%, transparent); }
+.vt-chip > .vt-chip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40vw; }
 .vt-select {
   position: relative; display: inline-flex; align-items: center;
   height: 36px; border-radius: var(--vt-r-pill); padding: 0 8px 0 2px;
@@ -342,7 +362,6 @@ body {
   padding: 0 24px 0 12px; font-weight: 500; font-size: var(--vt-fs-small); cursor: pointer; max-width: 220px;
 }
 .vt-select svg { position: absolute; right: 12px; width: 14px; height: 14px; pointer-events: none; color: var(--vt-ink-3); }
-.vt-select option { color: initial; }
 
 /* ----- 6. Overview ------------------------------------------------------- */
 .vt-view { display: flex; flex-direction: column; gap: 18px; }
@@ -359,14 +378,14 @@ body {
 .vt-stat-label { font-size: var(--vt-fs-small); font-weight: 500; color: var(--vt-ink-2); display: flex; align-items: center; gap: 7px; }
 .vt-stat-num { font-size: var(--vt-fs-h); font-weight: 700; letter-spacing: -0.03em; line-height: 1; margin-top: 4px; }
 .vt-stat-sub { font-size: var(--vt-fs-small); color: var(--vt-ink-3); margin-top: auto; }
-.vt-bar { height: 4px; border-radius: 4px; background: var(--vt-hairline); overflow: hidden; margin-top: 10px; }
-.vt-bar > span { display: block; height: 100%; border-radius: 4px; background: var(--c, var(--vt-accent)); width: 0; transition: width var(--vt-slow) var(--vt-ease); }
+.vt-bar { height: 4px; border-radius: var(--vt-r-bar); background: var(--vt-hairline); overflow: hidden; margin-top: 10px; }
+.vt-bar > span { display: block; height: 100%; border-radius: var(--vt-r-bar); background: var(--c, var(--vt-accent)); width: 0; transition: width var(--vt-slow) var(--vt-ease); }
 
 .vt-panel { padding: 6px 6px 8px; }
 .vt-panel-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px 8px; }
-.vt-panel-head h2 { font-size: var(--vt-fs-body); font-weight: 600; letter-spacing: -0.01em; }
+.vt-panel-head h2 { font-size: var(--vt-fs-body); font-weight: 600; letter-spacing: -0.01em; min-width: 0; overflow-wrap: anywhere; }
 .vt-panel-head .vt-muted { margin-left: auto; }
-.vt-count { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 7px; border-radius: var(--vt-r-pill); background: var(--vt-hairline); color: var(--vt-ink-2); font-size: 11px; font-weight: 600; }
+.vt-count { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 7px; border-radius: var(--vt-r-pill); background: var(--vt-hairline); color: var(--vt-ink-2); font-size: var(--vt-fs-small); font-weight: 600; }
 .vt-muted { color: var(--vt-ink-3); font-size: var(--vt-fs-small); }
 .vt-empty { padding: 22px 16px 26px; color: var(--vt-ink-3); text-align: center; font-size: var(--vt-fs-small); }
 
@@ -386,17 +405,15 @@ body {
 .vt-row-right strong { display: block; color: var(--vt-ink-2); font-weight: 600; }
 .vt-row-sub { display: block; }
 .vt-row svg.vt-chev { width: 14px; height: 14px; color: var(--vt-ink-3); flex: none; }
-.vt-row + .vt-row-sep { height: 1px; background: var(--vt-hairline); margin: 0 12px; }
 
 .vt-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c, var(--vt-ink-3)); flex: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--c, var(--vt-ink-3)) 22%, transparent); }
 .vt-pill {
   display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px;
-  border-radius: var(--vt-r-pill); font-size: 11px; font-weight: 600; letter-spacing: .01em; white-space: nowrap;
+  border-radius: var(--vt-r-pill); font-size: var(--vt-fs-small); font-weight: 600; letter-spacing: .01em; white-space: nowrap;
   background: color-mix(in srgb, var(--c, var(--vt-ink-3)) 22%, transparent); color: var(--vt-ink);
 }
 .vt-pill-blocked { --c: var(--vt-blocked); background: var(--vt-warn-soft); color: var(--vt-ink); }
 .vt-pill-blocked svg { width: 12px; height: 12px; }
-.vt-pill-flag { --c: var(--vt-blocked); }
 
 .vt-clients { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
 .vt-client-card { padding: 6px 6px 8px; }
@@ -440,15 +457,18 @@ body {
   transition: transform var(--vt-med) var(--vt-ease), box-shadow var(--vt-med) var(--vt-ease);
 }
 .vt-card:hover { transform: translateY(-2px); box-shadow: var(--vt-shadow-2), inset 0 1px 0 var(--vt-glass-highlight); }
-.vt-card-main { display: flex; flex-direction: column; gap: 3px; text-align: left; border: 0; background: transparent; padding: 0; color: var(--vt-ink); min-width: 0; }
-.vt-card-main:focus-visible { outline-offset: 4px; }
-.vt-card-client { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--vt-ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vt-card-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+/* The title is the real button (keyboard + screen readers); the rest of the card is the drag surface
+   and opens the sheet on click as a convenience. */
+.vt-card-open { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; text-align: left; border: 0; background: transparent; padding: 0; margin: 0; color: var(--vt-ink); min-width: 0; max-width: 100%; }
+.vt-card-open:focus-visible { outline-offset: 4px; }
+.vt-card-client { font-size: var(--vt-fs-small); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--vt-ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .vt-card-ep { font-weight: 600; letter-spacing: -0.01em; }
 .vt-card-ep small { font-weight: 500; color: var(--vt-ink-2); font-size: var(--vt-fs-small); margin-left: 6px; }
 .vt-card-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: var(--vt-fs-small); color: var(--vt-ink-3); margin-top: 4px; }
 .vt-card-menu { margin: -4px -4px 0 0; }
-.vt-card-bar { grid-column: 1 / -1; height: 3px; border-radius: 3px; background: var(--vt-hairline); overflow: hidden; margin-top: 6px; }
-.vt-card-bar > span { display: block; height: 100%; width: 0; border-radius: 3px; background: var(--c); transition: width var(--vt-slow) var(--vt-ease); }
+.vt-card-bar { grid-column: 1 / -1; height: 3px; border-radius: var(--vt-r-bar); background: var(--vt-hairline); overflow: hidden; margin-top: 6px; }
+.vt-card-bar > span { display: block; height: 100%; width: 0; border-radius: var(--vt-r-bar); background: var(--c); transition: width var(--vt-slow) var(--vt-ease); }
 .vt-card-wrap.vt-enter { animation: vt-enter var(--vt-slow) var(--vt-ease) both; animation-delay: calc(var(--i, 0) * 22ms); }
 .vt-card-wrap.vt-flip { transition: transform var(--vt-slow) var(--vt-ease); }
 @keyframes vt-enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -456,7 +476,7 @@ body {
 .vt-board-hint { color: var(--vt-ink-3); font-size: var(--vt-fs-small); padding: 0 6px; }
 
 /* ----- 8. Side sheet ----------------------------------------------------- */
-.vt-scrim { position: fixed; inset: 0; z-index: 40; background: var(--vt-scrim); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); opacity: 0; transition: opacity var(--vt-med) var(--vt-ease); }
+.vt-scrim { position: fixed; inset: 0; z-index: 40; background: var(--vt-scrim); -webkit-backdrop-filter: blur(var(--vt-blur-scrim)); backdrop-filter: blur(var(--vt-blur-scrim)); opacity: 0; transition: opacity var(--vt-med) var(--vt-ease); }
 .vt-scrim.is-open { opacity: 1; }
 .vt-sheet {
   position: fixed; top: 12px; right: 12px; bottom: 12px; z-index: 50;
@@ -471,7 +491,7 @@ body {
 .vt-sheet.is-open { transform: translateX(0); }
 .vt-sheet-head { display: flex; align-items: flex-start; gap: 12px; padding: 20px 18px 12px 22px; }
 .vt-sheet-head h2 { font-size: var(--vt-fs-h); font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; }
-.vt-eyebrow { display: block; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--vt-ink-3); margin-bottom: 6px; }
+.vt-eyebrow { display: block; font-size: var(--vt-fs-small); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--vt-ink-3); margin-bottom: 6px; overflow-wrap: anywhere; }
 .vt-sheet-body { flex: 1; overflow-y: auto; padding: 0 22px 28px; display: flex; flex-direction: column; gap: 22px; }
 .vt-sheet-body h3 { font-size: var(--vt-fs-small); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--vt-ink-3); margin-bottom: 10px; }
 .vt-stage-now { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 14px; border-radius: var(--vt-r-md); background: var(--vt-glass-soft); border: 1px solid var(--vt-glass-border); }
@@ -498,15 +518,16 @@ body {
 .vt-field:focus { border-color: var(--vt-focus); box-shadow: 0 0 0 3px var(--vt-accent-soft); }
 .vt-field::placeholder { color: var(--vt-ink-3); }
 textarea.vt-field { min-height: 96px; resize: vertical; line-height: 1.5; }
-select.vt-field { appearance: none; -webkit-appearance: none; padding-right: 32px; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>"); background-repeat: no-repeat; background-position: right 12px center; }
+select.vt-field { appearance: none; -webkit-appearance: none; padding-right: 36px; cursor: pointer; }
+.vt-field-select { position: relative; display: block; }
+.vt-field-select > svg { position: absolute; right: 12px; top: 50%; width: 14px; height: 14px; transform: translateY(-50%); pointer-events: none; color: var(--vt-ink-3); }
 .vt-label { display: block; font-size: var(--vt-fs-small); font-weight: 500; color: var(--vt-ink-2); margin-bottom: 6px; }
-.vt-form-row { display: flex; flex-direction: column; gap: 14px; }
 .vt-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .vt-error { color: var(--vt-danger); font-size: var(--vt-fs-small); min-height: 1.2em; }
 
 .vt-timeline { display: flex; flex-direction: column; }
 .vt-tl { position: relative; display: flex; align-items: flex-start; gap: 14px; padding: 7px 0 7px 2px; }
-.vt-tl::before { content: ""; position: absolute; left: 7px; top: 24px; bottom: -8px; width: 2px; background: var(--vt-hairline); border-radius: 2px; }
+.vt-tl::before { content: ""; position: absolute; left: 7px; top: 24px; bottom: -8px; width: 2px; background: var(--vt-hairline); border-radius: var(--vt-r-bar); }
 .vt-tl:last-child::before { display: none; }
 .vt-tl-dot { width: 12px; height: 12px; margin-top: 4px; border-radius: 50%; flex: none; border: 2px solid var(--c); background: transparent; box-sizing: border-box; transition: background var(--vt-med), box-shadow var(--vt-med); }
 .vt-tl.is-done .vt-tl-dot { background: var(--c); }
@@ -518,7 +539,7 @@ select.vt-field { appearance: none; -webkit-appearance: none; padding-right: 32p
 .vt-tl.is-current .vt-tl-label { font-weight: 600; }
 .vt-tl.is-current .vt-tl-main { background: var(--vt-accent-soft); margin: -5px -10px -5px -8px; padding: 5px 10px 5px 8px; border-radius: var(--vt-r-sm); }
 .vt-tl-time { font-size: var(--vt-fs-small); color: var(--vt-ink-3); white-space: nowrap; }
-.vt-tl-time em { font-style: normal; opacity: .8; }
+.vt-tl-time em { font-style: normal; }
 
 .vt-links { display: flex; flex-direction: column; gap: 10px; }
 .vt-link { display: flex; align-items: flex-end; gap: 8px; }
@@ -536,7 +557,7 @@ select.vt-field { appearance: none; -webkit-appearance: none; padding-right: 32p
   animation: vt-pop var(--vt-fast) var(--vt-ease) both;
 }
 @keyframes vt-pop { from { opacity: 0; transform: translateY(-4px) scale(.98); } to { opacity: 1; transform: none; } }
-.vt-menu-title { padding: 6px 10px 6px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--vt-ink-3); }
+.vt-menu-title { padding: 6px 10px 6px; font-size: var(--vt-fs-small); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--vt-ink-3); }
 .vt-menu-item {
   display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
   padding: 8px 10px; border: 0; border-radius: var(--vt-r-sm); background: transparent; color: var(--vt-ink);
@@ -548,7 +569,7 @@ select.vt-field { appearance: none; -webkit-appearance: none; padding-right: 32p
 .vt-menu-item .vt-muted { margin-left: auto; }
 .vt-menu-item svg { width: 14px; height: 14px; margin-left: auto; color: var(--vt-ink-2); }
 
-.vt-dialog { border: 1px solid var(--vt-glass-border); padding: 0; width: min(480px, calc(100vw - 32px)); max-height: calc(100vh - 32px); border-radius: var(--vt-r-xl); color: var(--vt-ink); box-shadow: var(--vt-shadow-3), inset 0 1px 0 var(--vt-glass-highlight); }
+.vt-dialog { position: fixed; border: 1px solid var(--vt-glass-border); padding: 0; width: min(480px, calc(100vw - 32px)); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); border-radius: var(--vt-r-xl); color: var(--vt-ink); box-shadow: var(--vt-shadow-3), inset 0 1px 0 var(--vt-glass-highlight); }
 .vt-dialog::backdrop { background: var(--vt-scrim, rgba(20,24,50,.18)); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
 .vt-dialog[open] { animation: vt-dialog-in var(--vt-slow) var(--vt-ease) both; }
 @keyframes vt-dialog-in { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
@@ -575,21 +596,30 @@ select.vt-field { appearance: none; -webkit-appearance: none; padding-right: 32p
   .vt-form-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 720px) {
-  .vt-app { padding-top: 8px; }
+  .vt-app { padding-top: calc(8px + env(safe-area-inset-top)); }
+  .vt-topbar { position: static; }   /* three rows on a phone: let it scroll away */
   .vt-board-wrap { scroll-snap-type: x mandatory; }
   .vt-board { grid-auto-columns: min(82vw, 330px); }
   .vt-board.is-single { grid-auto-columns: 100%; }
   .vt-sheet {
-    top: auto; right: 0; left: 0; bottom: 0; width: 100%; max-height: 92vh; height: auto; min-height: 60vh;
+    top: auto; right: 0; left: 0; bottom: 0; width: 100%; height: auto;
+    max-height: 92vh; max-height: 92dvh; min-height: 60vh; min-height: 60dvh;
     border-radius: var(--vt-r-xl) var(--vt-r-xl) 0 0;
     transform: translateY(105%);
   }
   .vt-sheet.is-open { transform: translateY(0); }
+  .vt-sheet-head { padding-top: max(20px, env(safe-area-inset-top)); }
   .vt-sheet-body { padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
   .vt-hero { padding-top: 4px; }
   .vt-row-right .vt-row-sub, .vt-panel-head .vt-muted { display: none; }
   .vt-toasts { bottom: calc(14px + env(safe-area-inset-bottom)); }
 }
+
+/* Touch devices: iOS Safari zooms the page when a field under 16px gets focus. */
+@media (pointer: coarse) {
+  .vt input, .vt select, .vt textarea { font-size: 16px; }
+}
+.vt-app { padding-left: calc(var(--vt-gutter) + env(safe-area-inset-left)); padding-right: calc(var(--vt-gutter) + env(safe-area-inset-right)); }
 
 /* ----- 11. Reduced motion ------------------------------------------------ */
 @media (prefers-reduced-motion: reduce) {
@@ -647,9 +677,12 @@ const STAGES = [
   { id: 'approved',          label: 'Approved',                short: 'Approved',      waitingOn: 'me',     nextAction: 'Record the feedback video' },
   { id: 'feedback_recorded', label: 'Feedback video recorded', short: 'Done',          waitingOn: 'none',   nextAction: 'Done' },
 ];
-const STAGE_INDEX = Object.fromEntries(STAGES.map((s, i) => [s.id, i]));
+const STAGE_INDEX = Object.assign(Object.create(null), Object.fromEntries(STAGES.map((s, i) => [s.id, i])));
+const isStageId = (s) => typeof s === 'string' && s in STAGE_INDEX;
 const FINAL_STAGE = 'feedback_recorded';   // only ever set by a manual tick, never by sync
 const STAGE_BEFORE_FINAL = 'approved';
+/* The one gate in the pipeline: the final tick is only reachable from Approved (and back). */
+const canTickFeedback = (stage) => stage === STAGE_BEFORE_FINAL || stage === FINAL_STAGE;
 
 const SEED_CLIENTS = [
   { id: 'camp-fit', name: 'Camp Fit' },
@@ -722,7 +755,9 @@ const SEED_EPISODES = [
    The only place that touches localStorage. Everything is wrapped in try/catch
    so private mode, quota errors or a blocked origin degrade to "in-memory only".
    To move to Supabase / the hub backend, replace load()/save() here (or swap
-   the Data module in §3 wholesale); the UI never talks to storage directly.
+   the Data module in §3 wholesale); the UI never talks to storage directly for
+   tracker data. The one exception is loadPrefs()/savePrefs(): theme and view
+   preferences are per-browser UI state, so §13/§15 call those directly.
    ============================================================================= */
 const Store = {
   load() {
@@ -733,7 +768,6 @@ const Store = {
     try { localStorage.setItem(CONFIG.storageKey, JSON.stringify(db)); return true; }
     catch (e) { return false; }
   },
-  clear() { try { localStorage.removeItem(CONFIG.storageKey); } catch (e) { /* ignore */ } },
   loadPrefs() {
     try { const raw = localStorage.getItem(CONFIG.prefsKey); return raw ? JSON.parse(raw) : {}; }
     catch (e) { return {}; }
@@ -761,18 +795,26 @@ const Store = {
      setBlocked(id, reason | null)                        → {ok, episode | error}
      deleteEpisode(id)                                    → {ok, episode | error}
      restoreEpisode(snapshot)                             → {ok}   (undo)
-     exportJSON() / importJSON(obj) / resetToSeed()
+     exportJSON() / previewImport(obj) / importJSON(obj) / resetToSeed()
      onChange(fn) → unsubscribe                           fn({type, episodeId})
      storageOk()                                          → boolean
 
    Episode shape:
-     { id, clientId, number, title, stage, history: [{stage, at, via?}],
+     { id, clientId, number, title, stage, history: [{stage, at, via?, back?}],
        notes, links: {notion, drive, video}, blocked: {reason, at} | null,
        createdAt, updatedAt }   (all timestamps are epoch ms)
    ============================================================================= */
 const DAY = 86400000;
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 const clone = (o) => JSON.parse(JSON.stringify(o));
+/* Links: keep http(s) only (a bare "notion.so/..." gets https:// added); anything else is dropped. */
+function safeUrl(v) {
+  const t = String(v || '').trim();
+  if (!t) return '';
+  if (/^https?:\/\//i.test(t)) return t;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(t)) return '';
+  return `https://${t}`;
+}
 const slug = (s) => String(s).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'client';
 
 function buildSeed(now = Date.now()) {
@@ -813,12 +855,13 @@ function normalizeDb(raw) {
     clients.push({ id, name });
   }
   const episodes = [];
-  const seenEp = new Set();
+  const seenEp = new Set(), seenNumber = new Set();
   let skipped = 0;
   for (const e of raw.episodes) {
     const ep = normalizeEpisode(e, seenClient, now);
-    if (!ep || seenEp.has(ep.id)) { skipped++; continue; }
-    seenEp.add(ep.id);
+    const key = ep && `${ep.clientId}:${ep.number}`;
+    if (!ep || seenEp.has(ep.id) || seenNumber.has(key)) { skipped++; continue; }
+    seenEp.add(ep.id); seenNumber.add(key);
     episodes.push(ep);
   }
   return { db: { version: 1, clients, episodes }, skipped };
@@ -826,13 +869,14 @@ function normalizeDb(raw) {
 
 function normalizeEpisode(raw, clientIds, now) {
   if (!raw || typeof raw !== 'object') return null;
-  if (!(raw.stage in STAGE_INDEX)) return null;
+  if (!isStageId(raw.stage)) return null;
   if (!clientIds.has(String(raw.clientId))) return null;
+  if (raw.number == null || raw.number === '') return null;
   const number = Number(raw.number);
-  if (!Number.isFinite(number) || number < 0) return null;
+  if (!Number.isInteger(number) || number < 0) return null;
   const history = (Array.isArray(raw.history) ? raw.history : [])
-    .filter((h) => h && (h.stage in STAGE_INDEX) && Number.isFinite(Number(h.at)))
-    .map((h) => ({ stage: h.stage, at: Number(h.at), ...(h.via ? { via: String(h.via) } : {}) }))
+    .filter((h) => h && isStageId(h.stage) && Number.isFinite(Number(h.at)))
+    .map((h) => ({ stage: h.stage, at: Number(h.at), ...(h.via ? { via: String(h.via) } : {}), ...(h.back ? { back: true } : {}) }))
     .sort((a, b) => a.at - b.at);
   if (!history.length || history[history.length - 1].stage !== raw.stage) {
     history.push({ stage: raw.stage, at: Number(raw.updatedAt) || now });
@@ -849,7 +893,7 @@ function normalizeEpisode(raw, clientIds, now) {
     stage: raw.stage,
     history,
     notes: String(raw.notes || ''),
-    links: { notion: String(links.notion || ''), drive: String(links.drive || ''), video: String(links.video || '') },
+    links: { notion: safeUrl(links.notion), drive: safeUrl(links.drive), video: safeUrl(links.video) },
     blocked,
     createdAt: Number(raw.createdAt) || history[0].at,
     updatedAt: Number(raw.updatedAt) || history[history.length - 1].at,
@@ -893,9 +937,10 @@ const Data = (() => {
 
   function addEpisode({ clientId, number, notes = '', stage = 'scripted', links = {}, title = '' }) {
     if (!db.clients.some((c) => c.id === clientId)) return fail('Unknown client');
+    if (number == null || number === '') return fail('Episode number is required');
     const n = Number(number);
-    if (!Number.isFinite(n) || n < 0) return fail('Episode number must be a number');
-    if (!(stage in STAGE_INDEX)) return fail('Unknown stage');
+    if (!Number.isInteger(n) || n < 0) return fail('Episode number must be a whole number');
+    if (!isStageId(stage)) return fail('Unknown stage');
     if (stage === FINAL_STAGE) return fail('New episodes cannot start as feedback recorded');
     if (db.episodes.some((e) => e.clientId === clientId && e.number === n)) return fail('That client already has this episode number');
     const now = Date.now();
@@ -903,7 +948,7 @@ const Data = (() => {
       id: `ep_${uid()}`, clientId, number: n, title: String(title || ''), stage,
       history: [{ stage, at: now }],
       notes: String(notes || ''),
-      links: { notion: String(links.notion || ''), drive: String(links.drive || ''), video: String(links.video || '') },
+      links: { notion: safeUrl(links.notion), drive: safeUrl(links.drive), video: safeUrl(links.video) },
       blocked: null, createdAt: now, updatedAt: now,
     };
     db.episodes.push(episode);
@@ -912,16 +957,19 @@ const Data = (() => {
   }
 
   /* Moves an episode to any stage except the final one. opts.via tags the
-     history entry ('sync' when it comes from the Super Client Video skill). */
+     history entry ('super-client-video' when it comes from the skill). A move
+     to an earlier stage is tagged back:true so the timeline and the
+     "delivered" count can tell a correction from a real step forward. */
   function updateEpisodeStage(id, stageId, opts = {}) {
     const ep = find(id);
     if (!ep) return fail('Episode not found');
-    if (!(stageId in STAGE_INDEX)) return fail('Unknown stage');
+    if (!isStageId(stageId)) return fail('Unknown stage');
     if (stageId === FINAL_STAGE && !opts._manualTick) return fail('Feedback video recorded is ticked manually only');
     if (ep.stage === stageId) return { ok: true, changed: false, episode: clone(ep) };
     const now = Number(opts.at) || Date.now();
+    const back = STAGE_INDEX[stageId] < STAGE_INDEX[ep.stage];
     ep.stage = stageId;
-    ep.history.push({ stage: stageId, at: now, ...(opts.via ? { via: String(opts.via) } : {}) });
+    ep.history.push({ stage: stageId, at: now, ...(opts.via ? { via: String(opts.via) } : {}), ...(back ? { back: true } : {}) });
     ep.updatedAt = now;
     persist(); emit({ type: 'episode:stage', episodeId: id });
     return { ok: true, changed: true, episode: clone(ep) };
@@ -932,7 +980,7 @@ const Data = (() => {
     const ep = find(id);
     if (!ep) return fail('Episode not found');
     if (ep.stage === FINAL_STAGE) return updateEpisodeStage(id, STAGE_BEFORE_FINAL);
-    if (ep.stage !== STAGE_BEFORE_FINAL) return fail('Approve the episode first, then tick the feedback video');
+    if (!canTickFeedback(ep.stage)) return fail('Approve the episode first, then tick the feedback video');
     return updateEpisodeStage(id, FINAL_STAGE, { _manualTick: true });
   }
 
@@ -942,7 +990,7 @@ const Data = (() => {
     if ('title' in patch) ep.title = String(patch.title || '');
     if ('notes' in patch) ep.notes = String(patch.notes || '');
     if (patch.links && typeof patch.links === 'object') {
-      for (const k of ['notion', 'drive', 'video']) if (k in patch.links) ep.links[k] = String(patch.links[k] || '').trim();
+      for (const k of ['notion', 'drive', 'video']) if (k in patch.links) ep.links[k] = safeUrl(patch.links[k]);
     }
     persist(); emit({ type: 'episode:meta', episodeId: id });
     return { ok: true, episode: clone(ep) };
@@ -970,6 +1018,7 @@ const Data = (() => {
   function restoreEpisode(snapshot) {
     const ep = normalizeEpisode(snapshot, new Set(db.clients.map((c) => c.id)), Date.now());
     if (!ep) return fail('Cannot restore');
+    if (db.episodes.some((e) => e.id !== ep.id && e.clientId === ep.clientId && e.number === ep.number)) return fail('That client already has this episode number');
     const i = db.episodes.findIndex((e) => e.id === ep.id);
     if (i >= 0) db.episodes[i] = ep; else db.episodes.push(ep);
     persist(); emit({ type: 'episode:restore', episodeId: ep.id });
@@ -978,6 +1027,12 @@ const Data = (() => {
 
   function exportJSON() {
     return { app: 'stan-media-video-tracker', version: 1, exportedAt: new Date().toISOString(), clients: clone(db.clients), episodes: clone(db.episodes) };
+  }
+  /* Validates an import without applying it, so the UI can confirm first. */
+  function previewImport(obj) {
+    const r = normalizeDb(obj);
+    return r ? { ok: true, clients: r.db.clients.length, episodes: r.db.episodes.length, skipped: r.skipped }
+             : fail('That file is not a Video Tracker export');
   }
   function importJSON(obj) {
     const result = normalizeDb(obj);
@@ -992,8 +1047,8 @@ const Data = (() => {
   function storageOk() { return persistOk; }
 
   return { getClients, getClient, addClient, getEpisodes, getEpisode, findEpisode, addEpisode, updateEpisodeStage,
-           toggleFeedbackVideo, updateEpisode, setBlocked, deleteEpisode, restoreEpisode, exportJSON, importJSON,
-           resetToSeed, onChange, storageOk };
+           toggleFeedbackVideo, updateEpisode, setBlocked, deleteEpisode, restoreEpisode, exportJSON, previewImport,
+           importJSON, resetToSeed, onChange, storageOk };
 })();
 
 /* =============================================================================
@@ -1035,6 +1090,7 @@ const ui = {
   prefs: Store.loadPrefs(),
   storageWarned: false,
   menu: null,                  // currently open "Move to…" menu state
+  lastUndo: null,              // most recent Undo action (Cmd/Ctrl+Z)
   dragId: null,
   dragOverForbidden: false,
   returnFocus: null,
@@ -1048,7 +1104,9 @@ const stageOf = (ep) => STAGES[STAGE_INDEX[ep.stage]];
 const stageColor = (stageId) => `var(--vt-stage-${STAGE_INDEX[stageId] + 1})`;
 const stageEnteredAt = (ep) => { for (let i = ep.history.length - 1; i >= 0; i--) if (ep.history[i].stage === ep.stage) return ep.history[i].at; return ep.updatedAt; };
 const lastChangeAt = (ep) => Math.max(ep.history[ep.history.length - 1]?.at || 0, ep.blocked?.at || 0, ep.createdAt || 0);
-const daysSince = (ts) => Math.max(0, Math.floor((Date.now() - ts) / DAY));
+const startOfDay = (t) => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
+/* Calendar days, not 24h buckets: something changed at 18:00 yesterday is "1 day" at 09:00 today. */
+const daysSince = (ts) => Math.max(0, Math.round((startOfDay(Date.now()) - startOfDay(ts)) / DAY));
 const progressPct = (ep) => Math.round((STAGE_INDEX[ep.stage] / (STAGES.length - 1)) * 100);
 const epName = (ep, client) => `${client ? client.name : 'Unknown'} · Ep ${ep.number}`;
 
@@ -1132,7 +1190,7 @@ function renderShell(root) {
           <button type="button" data-view="board">Pipeline</button>
         </nav>
         <div class="vt-actions">
-          <button type="button" class="vt-btn vt-btn-icon" id="vt-theme" aria-label="Switch to dark mode" title="Toggle dark mode">${ICONS.moon}</button>
+          <button type="button" class="vt-btn vt-btn-icon" id="vt-theme" aria-label="Dark mode" aria-pressed="false" title="Toggle dark mode">${ICONS.moon}</button>
           <button type="button" class="vt-btn" id="vt-export" title="Download all data as JSON">${ICONS.download}<span class="vt-hide-sm">Export</span></button>
           <button type="button" class="vt-btn" id="vt-import" title="Load data from a JSON export">${ICONS.upload}<span class="vt-hide-sm">Import</span></button>
           <input type="file" id="vt-import-file" accept="application/json,.json" hidden aria-hidden="true" tabindex="-1">
@@ -1178,7 +1236,7 @@ function renderClientChips() {
   for (const ep of Data.getEpisodes()) counts[ep.clientId] = (counts[ep.clientId] || 0) + 1;
   const chip = (id, label, count) => `
     <button type="button" class="vt-chip" data-client="${esc(id)}" aria-pressed="${ui.clientFilter === id}">
-      ${esc(label)}${count != null ? `<span class="vt-count">${count}</span>` : ''}
+      <span class="vt-chip-name">${esc(label)}</span>${count != null ? `<span class="vt-count">${count}<span class="vt-sr"> episodes</span></span>` : ''}
     </button>`;
   el.innerHTML = chip('all', 'All clients') + clients.map((c) => chip(c.id, c.name, counts[c.id] || 0)).join('');
 }
@@ -1199,7 +1257,10 @@ function renderOverview(view) {
   const onClients = open.filter(({ ep }) => stageOf(ep).waitingOn === 'client' && !ep.blocked);
   const onMe = open.filter(({ ep }) => needsMe(ep));
   const since = Date.now() - CONFIG.deliveredWindowDays * DAY;
-  const delivered = all.filter(({ ep }) => ep.history.some((h) => h.stage === 'approved' && h.at >= since));
+  // Delivered = currently Approved (or ticked done) and genuinely approved within the window.
+  // Backward corrections (un-ticking, moving back to Approved) are tagged back:true and don't count.
+  const delivered = all.filter(({ ep }) => STAGE_INDEX[ep.stage] >= STAGE_INDEX[STAGE_BEFORE_FINAL]
+    && ep.history.some((h) => h.stage === STAGE_BEFORE_FINAL && !h.back && h.at >= since));
   const total = all.length || 1;
   const animate = ui.lastRenderedView !== 'overview';
   const fade = (i) => (animate ? `class="vt-fade-in" style="--i:${i}"` : '');
@@ -1238,7 +1299,7 @@ function renderOverview(view) {
     if (!eps.length && filtersActive()) return '';
     return `
       <section class="vt-glass vt-client-card ${animate ? 'vt-fade-in' : ''}" style="--i:${i + 6}" aria-label="${esc(client.name)} episodes">
-        <div class="vt-panel-head"><h2>${esc(client.name)}</h2><span class="vt-count">${eps.length}</span></div>
+        <div class="vt-panel-head"><h2>${esc(client.name)}</h2><span class="vt-count">${eps.length}<span class="vt-sr"> episodes</span></span></div>
         ${eps.length ? `<ul>${eps.map(({ ep }) => `
           <li><button type="button" class="vt-mini" data-open="${esc(ep.id)}">
             <span class="vt-dot" style="--c:${stageColor(ep.stage)}"></span>
@@ -1261,7 +1322,7 @@ function renderOverview(view) {
         <h1 class="vt-h1">${esc(greeting())}</h1>
         <p class="vt-sub">${esc(subtitle)}${filtersActive() ? ' · <span class="vt-filtered-note">filtered</span>' : ''}</p>
       </div>
-      <div class="vt-hero-date" ${fade(1)}>${esc(new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }))}</div>
+      <div class="vt-hero-date ${animate ? 'vt-fade-in' : ''}" style="--i:1">${esc(new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }))}</div>
     </section>
 
     <section class="vt-summary" aria-label="Summary">
@@ -1274,7 +1335,7 @@ function renderOverview(view) {
     <section class="vt-glass vt-panel ${animate ? 'vt-fade-in' : ''}" style="--i:5" aria-labelledby="vt-attention-title">
       <div class="vt-panel-head">
         <h2 id="vt-attention-title">Needs my attention</h2>
-        <span class="vt-count">${onMe.length}</span>
+        <span class="vt-count">${onMe.length}<span class="vt-sr"> episodes</span></span>
         <span class="vt-muted">days since the last change</span>
       </div>
       ${onMe.length ? `<ul>${attention}</ul>` : `<div class="vt-empty">Nothing is waiting on you right now.</div>`}
@@ -1318,16 +1379,18 @@ function renderBoard(view) {
       const label = `${client.name} episode ${ep.number}`;
       return `
         <li class="vt-card-wrap ${isNew ? 'vt-enter' : ''}" style="--i:${i}" data-id="${esc(ep.id)}" data-stage="${esc(ep.stage)}" draggable="true">
-          <article class="vt-card vt-glass" style="--c:${stageColor(ep.stage)}">
-            <button type="button" class="vt-card-main" data-open="${esc(ep.id)}" aria-label="Open ${esc(label)}, ${esc(s.label)}, ${esc(fmtDays(days, { suffix: ' in stage' }))}${ep.blocked ? ', blocked' : ''}">
-              <span class="vt-card-client">${esc(client.name)}</span>
-              <span class="vt-card-ep">Ep ${ep.number}${ep.title ? `<small>${esc(ep.title)}</small>` : ''}</span>
+          <article class="vt-card vt-glass" style="--c:${stageColor(ep.stage)}" data-card="${esc(ep.id)}">
+            <div class="vt-card-main">
+              <button type="button" class="vt-card-open" data-open="${esc(ep.id)}" aria-label="Open ${esc(label)}, ${esc(s.label)}, ${esc(fmtDays(days, { suffix: ' in stage' }))}${ep.blocked ? ', blocked' : ''}">
+                <span class="vt-card-client">${esc(client.name)}</span>
+                <span class="vt-card-ep">Ep ${ep.number}${ep.title ? `<small>${esc(ep.title)}</small>` : ''}</span>
+              </button>
               <span class="vt-card-meta">
                 <span>${esc(days === 0 ? 'Moved today' : fmtDays(days, { suffix: ' in stage' }))}</span>
                 ${ep.blocked ? `<span class="vt-pill vt-pill-blocked" title="${esc(ep.blocked.reason)}">${ICONS.flag}Blocked</span>` : ''}
               </span>
-            </button>
-            <button type="button" class="vt-icon-btn vt-card-menu" data-menu="${esc(ep.id)}" aria-haspopup="menu" aria-label="Move ${esc(label)} to another stage">${ICONS.more}</button>
+            </div>
+            <button type="button" class="vt-icon-btn vt-card-menu" data-menu="${esc(ep.id)}" aria-haspopup="menu" aria-expanded="false" aria-label="Move ${esc(label)} to another stage">${ICONS.more}</button>
             <span class="vt-card-bar" aria-hidden="true"><span data-width="${progressPct(ep)}%"></span></span>
           </article>
         </li>`;
@@ -1337,7 +1400,7 @@ function renderBoard(view) {
         <header class="vt-col-head">
           <span class="vt-dot" style="--c:${stageColor(s.id)}"></span>
           <h2 id="vt-col-${esc(s.id)}" title="${esc(s.label)}">${esc(s.label)}</h2>
-          <span class="vt-count" aria-label="${eps.length} episodes">${eps.length}</span>
+          <span class="vt-count">${eps.length}<span class="vt-sr"> episodes</span></span>
         </header>
         <ul class="vt-col-body" role="list">${cards}</ul>
         <div class="vt-col-hint" aria-hidden="true">${s.id === FINAL_STAGE ? 'Drop an approved episode to tick it' : 'Drop here'}</div>
@@ -1345,8 +1408,9 @@ function renderBoard(view) {
   }).join('');
 
   view.innerHTML = `
+    <h1 class="vt-sr">Pipeline</h1>
     <p class="vt-board-hint">Drag cards between stages, or use the ⋯ menu on a card to move it. ${filtersActive() ? '<span class="vt-filtered-note">Filtered.</span>' : ''}</p>
-    <div class="vt-board-wrap"><div class="vt-board ${stages.length === 1 ? 'is-single' : ''}" aria-label="Pipeline board">${columns}</div></div>`;
+    <div class="vt-board-wrap"><div class="vt-board ${stages.length === 1 ? 'is-single' : ''}" role="region" aria-label="Pipeline board">${columns}</div></div>`;
 
   const wrap = $('.vt-board-wrap', view);
   if (before.hadBoard) wrap.scrollLeft = before.scrollLeft;
@@ -1355,7 +1419,7 @@ function renderBoard(view) {
   $$('.vt-card-wrap', view).forEach((el) => {
     const bar = $('.vt-card-bar > span', el);
     const prev = before.map.get(el.dataset.id);
-    if (prev && prev.stage in STAGE_INDEX) bar.style.width = `${Math.round((STAGE_INDEX[prev.stage] / (STAGES.length - 1)) * 100)}%`;
+    if (prev && isStageId(prev.stage)) bar.style.width = `${Math.round((STAGE_INDEX[prev.stage] / (STAGES.length - 1)) * 100)}%`;
   });
   requestAnimationFrame(() => $$('.vt-card-bar > span[data-width]', view).forEach((b) => { b.style.width = b.dataset.width; }));
 
@@ -1389,7 +1453,8 @@ function playFlip(view, beforeMap) {
 /* ---------- Drag & drop (HTML5 DnD; the ⋯ menu is the keyboard/touch path) ---------- */
 function bindDragAndDrop(view) {
   view.addEventListener('dragstart', (e) => {
-    const card = e.target.closest('.vt-card-wrap[draggable="true"]');
+    const node = e.target instanceof Element ? e.target : e.target.parentElement;   // Firefox: text-selection drags
+    const card = node && node.closest('.vt-card-wrap[draggable="true"]');
     if (!card) return;
     ui.dragId = card.dataset.id;
     e.dataTransfer.effectAllowed = 'move';
@@ -1433,7 +1498,7 @@ function bindDragAndDrop(view) {
 function dropAllowed(episodeId, stageId) {
   const ep = Data.getEpisode(episodeId);
   if (!ep) return false;
-  if (stageId === FINAL_STAGE) return ep.stage === STAGE_BEFORE_FINAL || ep.stage === FINAL_STAGE;
+  if (stageId === FINAL_STAGE) return canTickFeedback(ep.stage);
   return true;
 }
 
@@ -1452,7 +1517,7 @@ function moveEpisode(id, stageId) {
   if (!res.ok) { toast(res.error, { kind: 'warn' }); return; }
   if (!res.changed) return;
   toast(`${epName(before, client)} → ${STAGES[STAGE_INDEX[stageId]].label}`, {
-    action: { label: 'Undo', onClick: () => Data.restoreEpisode(before) },
+    action: { label: 'Undo', onClick: () => { if (Data.getEpisode(id)) Data.restoreEpisode(before); } },
   });
 }
 
@@ -1462,39 +1527,91 @@ function moveEpisode(id, stageId) {
 function openSheet(id) {
   const ep = Data.getEpisode(id);
   if (!ep) return;
+  if (ui.openEpisodeId && ui.openEpisodeId !== id) flushSheetEdits();
+  const wasOpen = !!ui.openEpisodeId;
   ui.openEpisodeId = id;
-  ui.returnFocus = document.activeElement;
+  // Remember where to send focus back by key, since the view re-renders while the sheet is open.
+  if (!wasOpen) {
+    const a = document.activeElement;
+    ui.returnFocus = a && a.hasAttribute && a.hasAttribute('data-open') ? { attr: 'data-open', value: a.getAttribute('data-open') } : a;
+  }
   const sheet = $('#vt-sheet', ui.root), scrim = $('#vt-scrim', ui.root);
   renderSheet();
   sheet.hidden = false; scrim.hidden = false;
+  const app = $('.vt-app', ui.root); if (app) app.inert = true;   // everything behind the sheet is out of reach
   requestAnimationFrame(() => { sheet.classList.add('is-open'); scrim.classList.add('is-open'); });
   document.body.style.overflow = 'hidden';
-  setTimeout(() => { const first = $('[data-close]', sheet); if (first) first.focus(); }, reducedMotion() ? 0 : 60);
+  setTimeout(() => { const first = $('[data-close]', sheet); if (first && ui.openEpisodeId === id) first.focus(); }, reducedMotion() ? 0 : 60);
 }
 
 function closeSheet() {
   if (!ui.openEpisodeId) return;
+  flushSheetEdits();
   const sheet = $('#vt-sheet', ui.root), scrim = $('#vt-scrim', ui.root);
   ui.openEpisodeId = null;
   sheet.classList.remove('is-open'); scrim.classList.remove('is-open');
   document.body.style.overflow = '';
-  const done = () => { if (!ui.openEpisodeId) { sheet.hidden = true; scrim.hidden = true; sheet.innerHTML = ''; } };
+  const app = $('.vt-app', ui.root); if (app) app.inert = false;
+  const done = () => { if (!ui.openEpisodeId) { sheet.hidden = true; scrim.hidden = true; sheet.innerHTML = ''; delete sheet.dataset.episodeId; } };
   if (reducedMotion()) done(); else setTimeout(done, 360);
-  if (ui.returnFocus && document.contains(ui.returnFocus)) ui.returnFocus.focus();
+  const view = $('#vt-view', ui.root);
+  let target = null;
+  if (ui.returnFocus && ui.returnFocus.attr) target = view.querySelector(`[${ui.returnFocus.attr}="${CSS.escape(ui.returnFocus.value)}"]`);
+  else if (ui.returnFocus && document.contains(ui.returnFocus)) target = ui.returnFocus;
+  (target || view).focus({ preventScroll: true });
   ui.returnFocus = null;
+}
+
+/* Notes and links are saved on a short debounce; this commits anything still pending so
+   closing the sheet, re-rendering it or switching episode never drops the last keystrokes. */
+let sheetSaveTimer = null;
+function flushSheetEdits() {
+  clearTimeout(sheetSaveTimer); sheetSaveTimer = null;
+  const sheet = $('#vt-sheet', ui.root);
+  const id = ui.openEpisodeId;
+  if (!sheet || !id || sheet.dataset.episodeId !== id) return;
+  const ep = Data.getEpisode(id);
+  if (!ep) return;
+  const patch = {};
+  const notes = $('[data-field="notes"]', sheet);
+  if (notes && notes.value !== ep.notes) patch.notes = notes.value;
+  const links = {};
+  $$('[data-link]', sheet).forEach((input) => { if (input.value.trim() !== ep.links[input.dataset.link]) links[input.dataset.link] = input.value; });
+  if (Object.keys(links).length) patch.links = links;
+  if (Object.keys(patch).length) Data.updateEpisode(id, patch);
 }
 
 function renderSheet() {
   const sheet = $('#vt-sheet', ui.root);
+  flushSheetEdits();
   const ep = ui.openEpisodeId && Data.getEpisode(ui.openEpisodeId);
   if (!ep) { closeSheet(); return; }
   const client = Data.getClient(ep.clientId) || { name: 'Unknown client' };
   const idx = STAGE_INDEX[ep.stage];
   const s = STAGES[idx];
   const isFinal = ep.stage === FINAL_STAGE;
-  const canTick = ep.stage === STAGE_BEFORE_FINAL || isFinal;
+  const canTick = canTickFeedback(ep.stage);
   const days = daysSince(stageEnteredAt(ep));
-  const lastEnteredAt = (stageId) => { for (let i = ep.history.length - 1; i >= 0; i--) if (ep.history[i].stage === stageId) return ep.history[i]; return null; };
+  // Timeline timestamps: the last genuine (forward) entry for a stage; a backward correction keeps the original date.
+  const lastEnteredAt = (stageId) => {
+    let any = null;
+    for (let i = ep.history.length - 1; i >= 0; i--) {
+      const h = ep.history[i];
+      if (h.stage !== stageId) continue;
+      if (!h.back) return h;
+      if (!any) any = h;
+    }
+    return any;
+  };
+  // Keep keyboard focus on the same control across the rebuild.
+  const active = document.activeElement;
+  let focusSel = null;
+  if (active && sheet.contains(active)) {
+    for (const attr of ['data-act', 'data-menu', 'data-link', 'data-field', 'data-close']) {
+      if (active.hasAttribute(attr)) { focusSel = `[${attr}="${CSS.escape(active.getAttribute(attr))}"]`; break; }
+    }
+    if (!focusSel && active.closest('[data-form="block"]')) focusSel = '[data-act="unblock"], [data-form="block"] [name="reason"]';
+  }
 
   const timeline = STAGES.map((st, i) => {
     const entry = lastEnteredAt(st.id);
@@ -1538,7 +1655,7 @@ function renderSheet() {
       <div class="vt-sheet-actions">
         <button type="button" class="vt-btn" data-act="back" ${idx === 0 || isFinal ? 'disabled' : ''} aria-label="Move back to ${idx > 0 ? esc(STAGES[idx - 1].label) : 'previous stage'}">${ICONS.back}Back</button>
         <button type="button" class="vt-btn vt-btn-primary" data-act="forward" ${idx >= STAGES.length - 2 ? 'disabled' : ''} aria-label="Move forward to ${idx < STAGES.length - 2 ? esc(STAGES[idx + 1].label) : 'next stage'}">Forward${ICONS.fwd}</button>
-        <button type="button" class="vt-btn" data-menu="${esc(ep.id)}" aria-haspopup="menu">Move to…${ICONS.down}</button>
+        <button type="button" class="vt-btn" data-menu="${esc(ep.id)}" aria-haspopup="menu" aria-expanded="false">Move to…${ICONS.down}</button>
       </div>
 
       <label class="vt-tick ${canTick ? '' : 'is-disabled'}" title="${canTick ? '' : 'Approve the episode first'}">
@@ -1584,6 +1701,8 @@ function renderSheet() {
         <button type="button" class="vt-btn vt-btn-ghost vt-btn-danger" data-act="delete">Delete episode</button>
       </div>
     </div>`;
+  sheet.dataset.episodeId = ep.id;
+  if (focusSel) { const next = sheet.querySelector(focusSel); if (next) next.focus({ preventScroll: true }); else $('[data-close]', sheet).focus(); }
 }
 
 function bindSheet() {
@@ -1627,20 +1746,22 @@ function bindSheet() {
       return;
     }
     if (e.target.matches('[data-link]')) {
-      Data.updateEpisode(id, { links: { [e.target.dataset.link]: e.target.value } });
+      const key = e.target.dataset.link;
+      const typed = e.target.value.trim();
+      const res = Data.updateEpisode(id, { links: { [key]: typed } });
+      const v = res.ok ? res.episode.links[key] : '';
+      if (typed && !v) toast('Only http(s) links are kept', { kind: 'warn' });
+      e.target.value = v;
       const a = e.target.closest('.vt-link').querySelector('a');
-      const v = e.target.value.trim();
       a.href = v || '#';
       if (v) { a.removeAttribute('aria-disabled'); a.removeAttribute('tabindex'); } else { a.setAttribute('aria-disabled', 'true'); a.setAttribute('tabindex', '-1'); }
     }
   });
 
-  let notesTimer = null;
   sheet.addEventListener('input', (e) => {
     if (!e.target.matches('[data-field="notes"]')) return;
-    const id = ui.openEpisodeId;
-    clearTimeout(notesTimer);
-    notesTimer = setTimeout(() => { if (ui.openEpisodeId === id) Data.updateEpisode(id, { notes: e.target.value }); }, 350);
+    clearTimeout(sheetSaveTimer);
+    sheetSaveTimer = setTimeout(flushSheetEdits, 350);
   });
 
   sheet.addEventListener('submit', (e) => {
@@ -1677,18 +1798,19 @@ function openMoveMenu(episodeId, anchor) {
   if (!ep) return;
   const menu = $('#vt-menu', ui.root);
   const client = Data.getClient(ep.clientId);
+  menu.setAttribute('aria-label', `Move ${epName(ep, client)} to`);
   menu.innerHTML = `
-    <div class="vt-menu-title">Move ${esc(epName(ep, client))} to</div>
+    <div class="vt-menu-title" aria-hidden="true">Move ${esc(epName(ep, client))} to</div>
     ${STAGES.map((s) => {
       const current = s.id === ep.stage;
-      const disabled = s.id === FINAL_STAGE && !(ep.stage === STAGE_BEFORE_FINAL || ep.stage === FINAL_STAGE);
+      const disabled = s.id === FINAL_STAGE && !canTickFeedback(ep.stage);
       return `<button type="button" class="vt-menu-item" role="menuitemradio" data-stage="${s.id}" aria-checked="${current}" ${disabled ? 'aria-disabled="true"' : ''} ${disabled ? `title="Approve the episode first"` : ''}>
         <span class="vt-dot" style="--c:${stageColor(s.id)}"></span>${esc(s.label)}
         ${current ? ICONS.check : s.id === FINAL_STAGE ? '<span class="vt-muted">manual tick</span>' : ''}
       </button>`;
     }).join('')}`;
   menu.hidden = false;
-  ui.menu = { episodeId, anchor };
+  ui.menu = { episodeId, anchor, openedAt: performance.now() };
 
   // Position near the anchor, clamped to the viewport.
   const r = anchor.getBoundingClientRect();
@@ -1710,7 +1832,7 @@ function closeMoveMenu() {
   menu.hidden = true; menu.innerHTML = '';
   const anchor = ui.menu && ui.menu.anchor;
   ui.menu = null;
-  if (anchor && document.contains(anchor)) { anchor.removeAttribute('aria-expanded'); anchor.focus(); }
+  if (anchor && document.contains(anchor)) { anchor.setAttribute('aria-expanded', 'false'); anchor.focus(); }
 }
 
 function bindMoveMenu() {
@@ -1732,9 +1854,12 @@ function bindMoveMenu() {
     else if (e.key === 'End') { e.preventDefault(); items[items.length - 1].focus(); }
     else if (e.key === 'Tab') { closeMoveMenu(); }
   });
+  menu.addEventListener('focusout', (e) => { if (ui.menu && !menu.contains(e.relatedTarget) && e.relatedTarget) closeMoveMenu(); });
   document.addEventListener('pointerdown', (e) => { if (ui.menu && !menu.contains(e.target) && !ui.menu.anchor.contains(e.target)) closeMoveMenu(); });
   window.addEventListener('resize', closeMoveMenu);
-  window.addEventListener('scroll', closeMoveMenu, true);
+  // The menu is fixed-position, so scrolling away detaches it from its anchor: close it. Scroll events
+  // are dispatched a frame late, so ignore any that belong to the tap/click that just opened it.
+  window.addEventListener('scroll', () => { if (ui.menu && performance.now() - ui.menu.openedAt > 300) closeMoveMenu(); }, true);
 }
 
 /* =============================================================================
@@ -1751,10 +1876,10 @@ function openNewEpisodeDialog() {
       <div><span class="vt-eyebrow">New episode</span><h2 id="vt-new-title">Add an episode</h2></div>
       <div class="vt-form-grid">
         <label><span class="vt-label">Client</span>
-          <select class="vt-field" name="clientId" required>
+          <span class="vt-field-select"><select class="vt-field" name="clientId" required>
             ${clients.map((c) => `<option value="${esc(c.id)}" ${c.id === preselect ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}
             <option value="__new" ${preselect === '__new' ? 'selected' : ''}>+ New client…</option>
-          </select>
+          </select>${ICONS.down}</span>
         </label>
         <label><span class="vt-label">Episode number</span>
           <input class="vt-field" type="number" name="number" min="0" step="1" inputmode="numeric" required value="${preselect === '__new' ? 1 : nextNumber(preselect)}">
@@ -1764,9 +1889,9 @@ function openNewEpisodeDialog() {
         <input class="vt-field" name="clientName" placeholder="e.g. Camp Fit" maxlength="60" autocomplete="off">
       </label>
       <label><span class="vt-label">Starting stage</span>
-        <select class="vt-field" name="stage">
+        <span class="vt-field-select"><select class="vt-field" name="stage">
           ${STAGES.filter((s) => s.id !== FINAL_STAGE).map((s) => `<option value="${s.id}">${esc(s.label)}</option>`).join('')}
-        </select>
+        </select>${ICONS.down}</span>
       </label>
       <label><span class="vt-label">Notes <span class="vt-muted">(optional)</span></span>
         <textarea class="vt-field" name="notes" placeholder="Topic, angle, anything useful" style="min-height:72px"></textarea>
@@ -1790,14 +1915,18 @@ function openNewEpisodeDialog() {
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     err.textContent = '';
-    let clientId = clientSel.value;
+    // Validate everything first; only then create a new client, so a failed submit leaves nothing behind.
+    const rawNumber = numberInput.value.trim();
+    const number = Number(rawNumber);
+    if (rawNumber === '' || !numberInput.validity.valid || !Number.isInteger(number) || number < 0) { err.textContent = 'Enter a whole episode number.'; numberInput.focus(); return; }
+    let clientId = clientSel.value, newName = '';
     if (clientId === '__new') {
-      const name = form.elements.clientName.value.trim();
-      if (!name) { err.textContent = 'Give the new client a name.'; form.elements.clientName.focus(); return; }
-      clientId = Data.addClient(name).id;
+      newName = form.elements.clientName.value.trim();
+      if (!newName) { err.textContent = 'Give the new client a name.'; form.elements.clientName.focus(); return; }
+      const existing = Data.getClients().find((c) => c.name.toLowerCase() === newName.toLowerCase());
+      if (existing && Data.getEpisodes().some((ep) => ep.clientId === existing.id && ep.number === number)) { err.textContent = 'That client already has this episode number.'; numberInput.focus(); return; }
     }
-    const number = Number(numberInput.value);
-    if (!Number.isInteger(number) || number < 0) { err.textContent = 'Episode number must be a whole number.'; numberInput.focus(); return; }
+    if (newName) clientId = Data.addClient(newName).id;
     const res = Data.addEpisode({ clientId, number, notes: form.elements.notes.value, stage: form.elements.stage.value });
     if (!res.ok) { err.textContent = res.error + '.'; numberInput.focus(); return; }
     dlg.close();
@@ -1833,20 +1962,39 @@ function confirmDialog({ title, body, okLabel = 'OK', cancelLabel = 'Cancel', da
 /* =============================================================================
    §12  TOASTS
    ============================================================================= */
-function toast(message, { action = null, kind = 'info', duration = 5000 } = {}) {
+function toast(message, { action = null, kind = 'info', duration = null } = {}) {
   const host = $('#vt-toasts', ui.root);
   if (!host) return;
-  while (host.children.length >= 3) host.firstElementChild.remove();
+  const ttl = duration != null ? duration : (action ? 12000 : 5000);   // toasts with an action stay longer
+  while (host.children.length >= 3) {
+    const victim = Array.from(host.children).find((c) => !c.contains(document.activeElement)) || host.firstElementChild;
+    victim.remove();
+  }
   const el = document.createElement('div');
   el.className = `vt-toast vt-glass-strong ${kind === 'warn' ? 'is-warn' : ''}`;
   el.setAttribute('role', 'status');
   el.innerHTML = `<span>${esc(message)}</span>${action ? `<button type="button" class="vt-btn">${esc(action.label)}</button>` : ''}`;
   let timer = null;
-  const dismiss = () => { clearTimeout(timer); el.classList.add('is-leaving'); setTimeout(() => el.remove(), reducedMotion() ? 0 : 220); };
-  if (action) $('button', el).addEventListener('click', () => { action.onClick(); dismiss(); });
+  const dismiss = () => {
+    clearTimeout(timer);
+    if (ui.lastUndo && ui.lastUndo.el === el) ui.lastUndo = null;
+    el.classList.add('is-leaving'); setTimeout(() => el.remove(), reducedMotion() ? 0 : 220);
+  };
+  const arm = () => { clearTimeout(timer); timer = setTimeout(dismiss, ttl); };
+  if (action) {
+    const run = () => { action.onClick(); dismiss(); };
+    $('button', el).addEventListener('click', run);
+    if (action.label === 'Undo') ui.lastUndo = { el, run };   // reachable with Cmd/Ctrl+Z
+  }
+  // Pausing on hover or focus keeps Undo reachable for keyboard users.
+  el.addEventListener('mouseenter', () => clearTimeout(timer));
+  el.addEventListener('focusin', () => clearTimeout(timer));
+  el.addEventListener('mouseleave', arm);
+  el.addEventListener('focusout', arm);
   host.appendChild(el);
-  timer = setTimeout(dismiss, duration);
+  arm();
 }
+function clearToasts() { const host = $('#vt-toasts', ui.root); if (host) host.replaceChildren(); ui.lastUndo = null; }
 
 /* =============================================================================
    §13  THEME
@@ -1863,8 +2011,8 @@ function applyTheme(pref) {
   if (!btn) return;
   const dark = effectiveTheme() === 'dark';
   btn.innerHTML = dark ? ICONS.sun : ICONS.moon;
-  btn.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
-  btn.setAttribute('aria-pressed', String(dark));
+  btn.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
+  btn.setAttribute('aria-pressed', String(dark));   // the name stays "Dark mode"; the state says whether it is on
 }
 function toggleTheme() {
   const next = effectiveTheme() === 'dark' ? 'light' : 'dark';
@@ -1892,11 +2040,11 @@ function importDataFromFile(file) {
   reader.onload = () => {
     let parsed;
     try { parsed = JSON.parse(String(reader.result)); } catch (e) { toast('That file is not valid JSON', { kind: 'warn' }); return; }
-    const check = normalizeDb(parsed);
-    if (!check) { toast('That file is not a Video Tracker export', { kind: 'warn' }); return; }
+    const check = Data.previewImport(parsed);
+    if (!check.ok) { toast(check.error, { kind: 'warn' }); return; }
     confirmDialog({
       title: 'Replace current data?',
-      body: `The import has ${check.db.clients.length} clients and ${check.db.episodes.length} episodes${check.skipped ? ` (${check.skipped} skipped as invalid)` : ''}. Everything currently in the tracker will be replaced. Export first if you want a backup.`,
+      body: `The import has ${check.clients} clients and ${check.episodes} episodes${check.skipped ? ` (${check.skipped} skipped as invalid)` : ''}. Everything currently in the tracker will be replaced. Export first if you want a backup.`,
       okLabel: 'Import', danger: true,
     }).then((ok) => {
       if (!ok) return;
@@ -1934,13 +2082,12 @@ function restoreFocus(view, key) {
 function setView(name) {
   if (ui.view === name) return;
   ui.view = name;
-  ui.prefs.view = name; Store.savePrefs(ui.prefs);
   render();
   $('#vt-view', ui.root).focus({ preventScroll: true });
 }
 
 function onDataChange(evt) {
-  if (evt.type === 'db:replace') { ui.clientFilter = 'all'; closeSheet(); }
+  if (evt.type === 'db:replace') { ui.clientFilter = 'all'; closeSheet(); clearToasts(); }   // stale Undo must not touch the new data
   renderClientChips();          // counts on the chips change with almost every event
   render();
   if (ui.openEpisodeId && evt.type !== 'episode:meta') {
@@ -1993,6 +2140,8 @@ function bindEvents() {
     if (menuBtn) { e.preventDefault(); openMoveMenu(menuBtn.dataset.menu, menuBtn); return; }
     const open = e.target.closest('[data-open]');
     if (open) { openSheet(open.dataset.open); return; }
+    const card = e.target.closest('[data-card]');   // the rest of a board card opens the sheet too (mouse convenience)
+    if (card && !e.target.closest('button, a')) { openSheet(card.dataset.card); return; }
     const action = e.target.closest('[data-action]');
     if (action && action.dataset.action === 'reset-seed') {
       confirmDialog({ title: 'Reset to sample data?', body: 'This replaces everything in the tracker with the built-in sample clients and episodes.', okLabel: 'Reset', danger: true })
@@ -2005,9 +2154,16 @@ function bindEvents() {
 
   // Global keys
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { if (ui.menu) closeMoveMenu(); else if (ui.openEpisodeId) closeSheet(); }
-    if (e.key === '/' && !e.metaKey && !e.ctrlKey && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) && !ui.openEpisodeId) {
+    const inField = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+    if (e.key === 'Escape') {
+      if (e.target.closest && e.target.closest('dialog[open]')) return;   // the <dialog> cancels itself
+      if (ui.menu) closeMoveMenu(); else if (ui.openEpisodeId) closeSheet();
+    }
+    if (e.key === '/' && !e.metaKey && !e.ctrlKey && !inField && !ui.menu && !ui.openEpisodeId) {
       e.preventDefault(); $('#vt-search', root).focus();
+    }
+    if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z' && !inField && ui.lastUndo) {
+      e.preventDefault(); ui.lastUndo.run();
     }
   });
   darkQuery.addEventListener('change', () => applyTheme(ui.prefs.theme));
@@ -2018,11 +2174,16 @@ function mount(root) {
   root.classList.add('vt');
   renderShell(root);
   applyTheme(ui.prefs.theme);
-  if (ui.prefs.view === 'board' || ui.prefs.view === 'overview') ui.view = ui.prefs.view;
   renderClientChips();
   bindEvents();
   Data.onChange(onDataChange);
-  render();
+  try {
+    render();
+  } catch (err) {
+    // Safety net: never leave the owner with a blank page if stored data is somehow unreadable.
+    console.error(err);
+    $('#vt-view', root).innerHTML = `<section class="vt-glass vt-panel"><div class="vt-empty">Something in the saved data could not be shown.<br><br><button type="button" class="vt-btn" data-action="reset-seed">Reset sample data</button></div></section>`;
+  }
   if (!Data.storageOk()) { ui.storageWarned = true; toast('Storage unavailable: changes will be lost when you close this tab', { kind: 'warn', duration: 8000 }); }
 }
 
