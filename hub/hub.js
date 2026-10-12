@@ -98,9 +98,9 @@ const S = {
   view: lsGet('hub.taskView', 'clients'), taskClient: 'all', qaVis: lsGet('hub.qaVis', '1') === '1',
   showDone: {}, obSel: lsGet('hub.obSel', ''), obOpen: {}, showPast: false, showAllPosts: false, showDoneNeeds: false, payAll: false,
   authRole: lsGet('hub.authRole', 'client'), authMode: 'signin',
-  vtView: lsGet('hub.vtView', 'board'), vtClient: 'all', vtQ: '', vtActAll: false,
+  vtView: lsGet('hub.vtView', 'board'), vtClient: 'all', vtQ: '', vtActAll: false, vtRange: lsGet('hub.vtRange', '6'), vtTopAll: false,
 };
-const D = { portals: [], access: {}, tasks: [], clients: {}, expenses: [], inbox: [], marks: {}, comments: [], episodes: [], vact: [], loadedAt: 0 };
+const D = { portals: [], access: {}, tasks: [], clients: {}, expenses: [], inbox: [], marks: {}, comments: [], episodes: [], vact: [], stats: [], loadedAt: 0 };
 const portal = id => D.portals.find(p => p.id === id);
 const task = id => D.tasks.find(t => t.id === id);
 const hc = pid => D.clients[pid] || { portal_id: pid, status: 'active', ob_done: {}, retainer: 0, cycle: 'monthly', plan: '', notes: '' };
@@ -229,7 +229,7 @@ async function loadAll() {
     comments: sb.from('portal_comments').select('*').order('created_at').limit(5000),
   };
   if (S.admin) { q.clients = sb.from('hub_clients').select('*'); q.expenses = sb.from('hub_expenses').select('*').order('date'); q.inbox = sb.from('hub_inbox').select('*').order('created_at');
-    q.episodes = sb.from('vt_episodes').select('*').order('created_at'); q.vact = sb.from('vt_activity').select('*').order('at', { ascending: false }).limit(400); }
+    q.episodes = sb.from('vt_episodes').select('*').order('created_at'); q.vact = sb.from('vt_activity').select('*').order('at', { ascending: false }).limit(400); q.stats = sb.from('vt_stats').select('*'); }
   const keys = Object.keys(q), res = await Promise.all(Object.values(q)), r = Object.fromEntries(keys.map((k, i) => [k, res[i]]));
   const bad = res.find(x => x.error);
   if (bad) toast('Couldn’t load everything: ' + bad.error.message);
@@ -240,7 +240,7 @@ async function loadAll() {
   D.marks = {}; (r.marks.data || []).forEach(m => D.marks[m.portal_id + ':' + m.item_id] = m);
   D.comments = r.comments.data || [];
   if (S.admin) { D.clients = {}; (r.clients.data || []).forEach(c => D.clients[c.portal_id] = c); D.expenses = r.expenses.data || []; D.inbox = r.inbox.data || [];
-    D.episodes = (r.episodes.data || []).map(e => vtSaveT[e.id] ? vtEp(e.id) || e : e); D.vact = r.vact.data || []; }
+    D.episodes = (r.episodes.data || []).map(e => vtSaveT[e.id] ? vtEp(e.id) || e : e); D.vact = r.vact.data || []; D.stats = r.stats.data || []; }
   D.loadedAt = Date.now();
 }
 let live = null;
@@ -279,6 +279,7 @@ function startLive() {
     on('hub_inbox', e => { const fresh = e.eventType === 'INSERT' && !D.inbox.some(x => x.id === e.new.id); upsert(D.inbox, e); if (fresh) toast('Needs you: ' + e.new.title); });
     on('vt_episodes', e => { if (!(e.eventType !== 'DELETE' && vtSaveT[e.new.id])) upsert(D.episodes, e); });
     on('vt_activity', e => { if (e.eventType !== 'DELETE' && !D.vact.some(a => a.id === e.new.id)) D.vact.unshift(e.new); });
+  on('vt_stats', e => upsert(D.stats, e));
   }
   live.subscribe();
 }
@@ -1106,12 +1107,12 @@ function itemHTML(ctx) {
 }
 
 /* ---------- form sheets (admin edits) ---------- */
-function formSheet({ kicker, title, body, submit = 'Save', onSubmit, onDelete, deleteLabel = 'Delete', wide }) {
+function formSheet({ kicker, title, body, submit = 'Save', onSubmit, onDelete, deleteLabel = 'Delete', wide, onClose }) {
   const ctx = { onSubmit, onDelete };
   openSheet('form', ctx, () => `<div class="sh-head"><h2><span class="k">${esc(kicker || '')}</span>${esc(title)}</h2><button class="ib" data-act="close" aria-label="Close">${I.x}</button></div>
     <div class="sh-body"><form id="sheetForm" data-form="sheet" autocomplete="off">${body}</form></div>
     <div class="sh-foot">${onDelete ? `<button class="btn danger ghost" data-act="sheetDel">${I.trash}${deleteLabel}</button>` : ''}<div class="r"><button class="btn" data-act="close">Cancel</button><button class="btn primary" type="submit" form="sheetForm">${submit}</button></div></div>`,
-  { wide, focus: '#sheetForm input:not([type=hidden]),#sheetForm textarea' });
+  { wide, onClose, focus: '#sheetForm input:not([type=hidden]),#sheetForm textarea' });
 }
 const fIn = (name, label, val = '', attrs = '') => `<div class="fld"><label class="l">${label}</label><input name="${name}" value="${esc(val ?? '')}" ${attrs}></div>`;
 const fTa = (name, label, val = '', ph = '') => `<div class="fld"><label class="l">${label}</label><textarea name="${name}" placeholder="${esc(ph)}">${esc(val ?? '')}</textarea></div>`;
@@ -1299,16 +1300,17 @@ function openMenu(anchor) {
 
 /* ---------- theme ---------- */
 const sysDark = matchMedia('(prefers-color-scheme: dark)');
-const isDark = () => document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : sysDark.matches;
+const isDark = () => document.documentElement.dataset.theme !== 'light';
+const themeMeta = () => { const m = $('meta[name="theme-color"]'); if (m) m.content = isDark() ? '#000000' : '#eef0f5'; };
 function toggleTheme(from) {
-  const dark = !isDark(), apply = () => { document.documentElement.dataset.theme = dark ? 'dark' : 'light'; if (S.ready) renderTop(S.r || route()); };
+  const dark = !isDark(), apply = () => { document.documentElement.dataset.theme = dark ? 'dark' : 'light'; themeMeta(); if (S.ready) renderTop(S.r || route()); };
   lsSet('hub-theme', dark ? 'dark' : 'light');
   if (reduceMotion.matches || !document.startViewTransition || !from) { document.documentElement.classList.add('theme-fade'); apply(); return setTimeout(() => document.documentElement.classList.remove('theme-fade'), 500); }
   const r = from.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2, rad = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
   const vt = document.startViewTransition(apply);
   vt.ready.then(() => document.documentElement.animate({ clipPath: [`circle(0 at ${x}px ${y}px)`, `circle(${rad}px at ${x}px ${y}px)`] }, { duration: 650, easing: 'cubic-bezier(.3,.8,.3,1)', pseudoElement: '::view-transition-new(root)' })).catch(() => {});
 }
-sysDark.addEventListener('change', () => S.ready && renderTop(S.r || route()));
+themeMeta();
 
 /* ---------- chat dock (one thread per portal) ---------- */
 const FILE_MAX = 10 * 1024 * 1024;
@@ -1583,7 +1585,7 @@ function pageVideos() {
   const ps = sortedPortals();
   return `${managerNav('videos')}
   <div class="page-head"><div><div class="eyebrow">${new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</div><h1>Videos</h1>
-    <div class="sub">Every episode and the stage it’s at. Moves here update Needed from me; the skill updates this.</div></div>
+    <div class="sub">Every episode, the stage it’s at, and how it did once posted. Moves here update Needed from me; the skill updates this.</div></div>
     <div class="acts"><button class="btn primary" data-act="vtNew">${I.plus}Episode</button></div></div>
   <div class="stats">
     <div class="card stat"><div class="k">${I.play}In progress</div><div class="v">${open.length}</div><div class="s">${all.length} episodes in total</div></div>
@@ -1591,7 +1593,7 @@ function pageVideos() {
     <div class="card stat ${onMe ? 'alert' : ''}"><div class="k">${I.flag}Waiting on me</div><div class="v">${onMe}</div><div class="s">${open.filter(vtBlocked).length ? `${open.filter(vtBlocked).length} blocked` : 'Nothing blocked'}</div></div>
     <div class="card stat"><div class="k">${I.check}Delivered this week</div><div class="v">${delivered}</div><div class="s">Approved in the last 7 days</div></div>
   </div>
-  <div class="toolbar vt-toolbar">${seg('vtview', [['board', 'Board'], ['clients', 'By client']], S.vtView, 'vtView')}
+  <div class="toolbar vt-toolbar">${seg('vtview', [['board', 'Board'], ['clients', 'By client'], ['perf', 'Performance']], S.vtView, 'vtView')}
     <div class="chips grow"><button class="fchip ${S.vtClient === 'all' ? 'on' : ''}" data-act="vtClient" data-v="all">All clients</button>${ps.map(p => `<button class="fchip ${S.vtClient === p.id ? 'on' : ''}" data-act="vtClient" data-v="${p.id}">${av(p, 'sm')}${esc(p.name)}</button>`).join('')}</div>
     <label class="search">${I.search}<input type="search" placeholder="Search episodes" value="${esc(S.vtQ)}" data-in="vtq" aria-label="Search episodes"></label></div>
   <div id="vtbody">${vtBody()}</div>
@@ -1600,6 +1602,7 @@ function pageVideos() {
 function vtBody() {
   if (!D.portals.length) return `<div class="card">${empty('No clients yet', 'Add a client first, then their episodes.')}</div>`;
   const items = D.episodes.filter(vtMatch);
+  if (S.vtView === 'perf') return vtPerf();
   if (S.vtView === 'clients') return `<div class="cgrid">${sortedPortals().filter(p => S.vtClient === 'all' || p.id === S.vtClient).map(p => vtClientCard(p, items.filter(e => e.portal_id === p.id))).join('')}</div>`;
   return `<div class="vt-board">${VT_STAGES.map(s => {
     const eps = items.filter(e => e.stage === s.id).sort((a, b) => (vtEnteredAt(a) || '').localeCompare(vtEnteredAt(b) || ''));
@@ -1621,7 +1624,7 @@ function vtClientCard(p, eps) {
   const wk = addDays(todayKey(), -30), delivered = eps.filter(e => (e.history || []).some(h => h.stage === 'approved' && !h.back && ymd(new Date(h.at)) >= wk)).length;
   const blocked = eps.filter(vtBlocked).length, late = eps.filter(e => e.due && e.due < todayKey() && e.stage !== VT_FINAL).length;
   return `<section class="card ccard lift" style="--c:${c}">
-    <header>${av(p)}<div class="nm"><b>${esc(p.name)}</b><small>${open} in flight · ${delivered} delivered in 30 days${blocked ? ` · <span style="color:var(--warn)">${blocked} blocked</span>` : ''}${late ? ` · <span style="color:var(--bad)">${late} overdue</span>` : ''}</small></div>
+    <header>${av(p)}<div class="nm"><b>${esc(p.name)}</b><small>${open} in flight · ${delivered} delivered in 30 days${D.stats.some(s => s.portal_id === p.id) ? ` · ${fmtN(sum(D.stats.filter(s => s.portal_id === p.id).map(s => s.views)))} views` : ''}${blocked ? ` · <span style="color:var(--warn)">${blocked} blocked</span>` : ''}${late ? ` · <span style="color:var(--bad)">${late} overdue</span>` : ''}</small></div>
       <button class="ib sm" data-act="go" data-v="#/portal/${p.id}" title="Open their portal" aria-label="Open portal">${I.grid}</button></header>
     <div class="vt-pipe" title="${VT_STAGES.map((s, k) => `${s.label}: ${counts[k]}`).join('\n')}">${VT_STAGES.map((s, k) => `<span class="${counts[k] ? 'has' : ''}" style="--c:${vtColor(s.id)}">${counts[k] ? `<b>${counts[k]}</b>` : ''}</span>`).join('')}</div>
     <div>${vtSorted(eps).map(ep => `<div class="trow"><span class="dot" style="--c:${vtBlocked(ep) ? 'var(--vtblk)' : vtColor(ep.stage)};margin-top:8px"></span>
@@ -1645,7 +1648,7 @@ function vtActLine(a) {
   const ep = a.episode_id && vtEp(a.episode_id), p = a.portal_id && portal(a.portal_id);
   const who = ep && p ? `<b>${esc(p.name)} · Ep ${ep.number}</b>` : p ? `<b>${esc(p.name)}</b>` : '<b>An episode</b>';
   const st = id => vtIsStage(id) ? VT_STAGES[VT_IDX[id]].label : '';
-  const text = { stage: `${who} moved to ${esc(st(a.to_stage))}`, added: `${who} added${a.to_stage && a.to_stage !== 'scripted' ? ` at ${esc(st(a.to_stage))}` : ''}`, blocked: `${who} blocked: ${esc(a.text)}`, unblocked: `${who} flag cleared`, due: `${who} ${esc(a.text)}`, deleted: `${p ? `<b>${esc(p.name)} · ${esc(a.text)}</b>` : who} deleted` }[a.type] || `${who} ${esc(a.text || a.type)}`;
+  const text = { stage: `${who} moved to ${esc(st(a.to_stage))}`, added: `${who} added${a.to_stage && a.to_stage !== 'scripted' ? ` at ${esc(st(a.to_stage))}` : ''}`, blocked: `${who} blocked: ${esc(a.text)}`, unblocked: `${who} flag cleared`, due: `${who} ${esc(a.text)}`, deleted: `${p ? `<b>${esc(p.name)} · ${esc(a.text)}</b>` : who} deleted`, stats: `${who} numbers added · ${esc(a.text)}` }[a.type] || `${who} ${esc(a.text || a.type)}`;
   const via = a.via && !/^hub/.test(a.via) ? `<span class="chip violet">${I.bolt}${esc(a.via === 'client' ? 'client' : a.via)}</span>` : '';
   const d = new Date(a.at), mins = Math.round((Date.now() - d) / 60000);
   const when = mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.round(mins / 60)}h ago` : relLabel(ymd(d));
@@ -1662,7 +1665,7 @@ function vtPortalCard(p) {
   const eps = vtSorted(D.episodes.filter(e => e.portal_id === p.id));
   return `<section class="card s12"><div class="card-head"><div><h3>${I.play}Videos</h3><div class="sub">Only you see this. The client sees finished videos as deliverables.</div></div>
       <div style="display:flex;gap:6px"><button class="btn sm" data-act="go" data-v="#/videos">Board</button><button class="ib sm" data-act="vtNew" data-pid="${p.id}" title="New episode" aria-label="New episode">${I.plus}</button></div></div>
-    ${eps.length ? `<div class="vt-pipe" style="margin-top:4px">${VT_STAGES.map(s => { const n = eps.filter(e => e.stage === s.id).length; return `<span class="${n ? 'has' : ''}" style="--c:${vtColor(s.id)}">${n ? `<b>${n}</b>` : ''}</span>`; }).join('')}</div>
+    ${eps.length ? `<div class="vt-pipe" style="margin-top:4px">${VT_STAGES.map(s => { const n = eps.filter(e => e.stage === s.id).length; return `<span class="${n ? 'has' : ''}" style="--c:${vtColor(s.id)}">${n ? `<b>${n}</b>` : ''}</span>`; }).join('')}</div>${vtPortalPerf(p.id)}
     ${eps.slice(0, 6).map(ep => `<div class="trow"><span class="dot" style="--c:${vtColor(ep.stage)};margin-top:8px"></span><div class="tmain" data-act="vtOpen" data-id="${ep.id}"><div class="ttl">Ep ${ep.number}${ep.title ? ` · ${esc(ep.title)}` : ''}</div><div class="tmeta">${vtStageChip(ep)}${vtDue(ep)}${vtBlocked(ep) ? '<span class="chip orange">Blocked</span>' : ''}</div></div>
       <span class="muted" style="font-size:12.5px;margin-top:8px">${esc(vtStage(ep).next)}</span></div>`).join('')}${eps.length > 6 ? `<button class="more" data-act="go" data-v="#/videos">${I.right}All ${eps.length} on the board</button>` : ''}`
     : `<div class="empty">No episodes yet. Add one, or run <b>/super-client-video ${esc(p.name)}</b>.</div>`}</section>`;
@@ -1694,6 +1697,7 @@ function vtSheetHTML(id) {
         <div class="vt-links"><label class="l">Links</label>
           ${[['notion', 'Notion page'], ['drive', 'Drive folder'], ['video', 'Finished video']].map(([k, l]) => `<div class="fld"><label class="l">${l}${ep.links?.[k] ? `<a href="${esc(safeUrl(ep.links[k]))}" target="_blank" rel="noopener" style="color:var(--accent);text-transform:none;letter-spacing:0">Open ${I.ext}</a>` : ''}</label><input name="link_${k}" value="${esc(ep.links?.[k] || '')}" placeholder="https://…" inputmode="url"></div>`).join('')}</div>
       </form>
+      ${vtSheetStats(ep)}
       ${items.length || t ? `<label class="l" style="margin-top:4px">Linked</label>${items.map(x => `<div class="mrow click" data-act="inbox" data-id="${x.id}"><span class="cat">${I.inbox}</span><div class="t"><div>${esc(x.title)}</div><small>${x.kind === 'approval' ? 'Needs your approval' : 'Needs doing'}${x.source && x.source !== 'manual' ? ' · ' + esc(x.source) : ''}</small></div></div>`).join('')}
         ${t ? `<div class="mrow click" data-act="task" data-id="${t.id}"><span class="cat">${I.eye}</span><div class="t"><div>${esc(t.title)}</div><small>In their portal · ${t.approval ? { pending: 'awaiting their approval', approved: 'approved by the client', changes: 'they asked for changes' }[aprState(ep.portal_id, t.id)] : t.done ? 'delivered' : 'not delivered yet'}</small></div></div>` : ''}` : ''}
     </div>
@@ -1751,6 +1755,160 @@ document.addEventListener('drop', e => {
   const from = ep.stage;
   vtSetStage(ep, col.dataset.stage).then(ok => { if (!ok) return; render(false); $(`.vt-card[data-id="${ep.id}"]`)?.classList.add('land'); toast(`${vtName(ep)} → ${VT_STAGES[VT_IDX[ep.stage]].label}`, () => vtSetStage(ep, from)); });
 });
+
+/* ---------- PERFORMANCE (how each episode did, per platform, rolled up by month) ----------
+   One vt_stats row per episode per platform holding the latest numbers. Months group by the posted date
+   (falling back to when the episode was approved). Admin only, like the rest of Videos. */
+const VT_PLATFORMS = { instagram: 'Instagram', tiktok: 'TikTok', youtube: 'YouTube', facebook: 'Facebook', linkedin: 'LinkedIn', other: 'Other' };
+const VT_PLAT_MARK = { instagram: 'IG', tiktok: 'TT', youtube: 'YT', facebook: 'FB', linkedin: 'IN', other: '…' };
+const fmtN = v => { v = +v || 0; const a = Math.abs(v); return a >= 1e6 ? (v / 1e6).toFixed(a >= 1e7 ? 0 : 1).replace(/\.0$/, '') + 'M' : a >= 1e4 ? Math.round(v / 1e3) + 'K' : a >= 1e3 ? (v / 1e3).toFixed(1).replace(/\.0$/, '') + 'K' : String(Math.round(v)); };
+const pct1 = v => { const p = (+v || 0) * 100; return (p >= 10 ? Math.round(p) : p.toFixed(1).replace(/\.0$/, '')) + '%'; };
+const statsFor = ep => D.stats.filter(s => s.episode_id === ep.id);
+const epApprovedAt = ep => { const h = ep.history || []; for (let i = h.length - 1; i >= 0; i--) if (h[i].stage === 'approved' && !h[i].back) return h[i].at; return null; };
+const statMonth = (s, ep) => String(s.posted || (ep && (epApprovedAt(ep) || ep.created_at)) || s.updated_at || '').slice(0, 7);
+const statEng = s => (+s.likes || 0) + (+s.comments || 0) + (+s.shares || 0) + (+s.saves || 0);
+const engOf = rows => { const v = sum(rows.map(r => r.views)); return v ? sum(rows.map(statEng)) / v : 0; };
+const monthLabel = (k, o = { month: 'short' }) => parseD(k + '-01').toLocaleDateString('en-GB', o);
+const vtPlatMark = p => `<span class="vt-plat" aria-hidden="true">${VT_PLAT_MARK[p] || '…'}</span>`;
+function vtRangeMonths() {
+  const n = S.vtRange === 'all' ? 0 : +S.vtRange || 6;
+  if (n) return Array.from({ length: n }, (_, i) => monthKey(i - n + 1));
+  const first = D.stats.map(s => statMonth(s, vtEp(s.episode_id))).filter(Boolean).sort()[0] || monthKey(-2);
+  const len = Math.min(24, Math.max(3, monthDiff(first, monthKey()) + 1));
+  return Array.from({ length: len }, (_, i) => monthKey(i - len + 1));
+}
+/* every stat row inside the window, joined to its episode, through the client chips and search */
+function vtPerfRows(months) {
+  const set = new Set(months);
+  return D.stats.map(s => ({ s, ep: vtEp(s.episode_id) })).filter(x => x.ep && vtMatch(x.ep)).map(x => ({ ...x, m: statMonth(x.s, x.ep) })).filter(x => set.has(x.m));
+}
+const vtSum = rows => { const views = sum(rows.map(r => r.s.views)); return { views, posts: rows.length, eps: new Set(rows.map(r => r.ep.id)).size, eng: engOf(rows.map(r => r.s)), avg: rows.length ? views / rows.length : 0 }; };
+function vtGroup(rows, key) { const g = {}; rows.forEach(r => (g[key(r)] ||= []).push(r)); return g; }
+function vtDelta(cur, prev, good = true) {
+  if (!prev) return '';
+  const d = (cur - prev) / prev, up = d >= 0, cls = (up === good) ? 'up' : 'down';
+  return `<span class="vt-delta ${cls}">${up ? '↑' : '↓'} ${pct1(Math.abs(d))}</span>`;
+}
+function vtMonthChart(months, byMonth) {
+  const vals = months.map(k => sum((byMonth[k] || []).map(r => r.s.views)));
+  const max = niceMax(Math.max(...vals, 1)), m0 = monthKey();
+  return `<div class="chart vt-chart ${months.length > 8 ? 'dense' : ''}" role="img" aria-label="Views by month"><div class="grid">${[0, .5, 1].map(f => `<div class="gl ${f ? '' : 'zero'}" style="bottom:${f * 100}%"><span>${fmtN(max * f)}</span></div>`).join('')}</div>
+    <div class="cols">${months.map((k, i) => { const rows = byMonth[k] || [], v = vals[i], top = [...rows].sort((a, b) => (+b.s.views || 0) - (+a.s.views || 0))[0];
+      return `<div class="col ${k === m0 ? 'now' : ''}" tabindex="0" aria-label="${monthLabel(k, { month: 'long', year: 'numeric' })}: ${fmtN(v)} views"><div class="bar i" style="height:${v / max * 100}%;animation-delay:${i * 40}ms"></div>
+        <div class="tip chrome"><b>${monthLabel(k, { month: 'long', year: 'numeric' })}</b><div><span>Views</span><span>${fmtN(v)}</span></div><div><span>Posts</span><span>${rows.length}</span></div><div><span>Engagement</span><span>${pct1(engOf(rows.map(r => r.s)))}</span></div>${top ? `<div><span>Top</span><span>${esc(vtName(top.ep))}</span></div>` : ''}</div>
+        <div class="ml">${months.length > 12 && i % 2 ? '' : monthLabel(k)}</div></div>`; }).join('')}</div></div>`;
+}
+function vtMonthTable(months, byMonth) {
+  const m0 = monthKey(), rows = [...months].reverse().map((k, i, arr) => { const t = vtSum(byMonth[k] || []), prev = arr[i + 1] ? vtSum(byMonth[arr[i + 1]] || []) : null; return { k, t, prev }; });
+  return `<table class="vt-table"><caption class="sr">Views by month</caption><thead><tr><th scope="col">Month</th><th scope="col">Posts</th><th scope="col">Views</th><th scope="col">Avg / post</th><th scope="col">Engagement</th><th scope="col">vs month before</th></tr></thead>
+    <tbody>${rows.map(({ k, t, prev }) => `<tr class="${k === m0 ? 'now' : ''}"><td>${monthLabel(k, { month: 'short', year: 'numeric' })}</td><td>${t.posts}</td><td>${fmtN(t.views)}</td><td>${fmtN(t.avg)}</td><td>${t.views ? pct1(t.eng) : '—'}</td><td>${prev && prev.views && t.views ? vtDelta(t.views, prev.views) : '—'}</td></tr>`).join('')}</tbody></table>`;
+}
+function vtRankRow(n, title, sub, views, max, act = '', extra = '') {
+  return `<div class="vt-rank" ${act}><span class="n">${n}</span><div class="t"><div>${title}</div><small>${sub}</small><div class="bar"><b style="width:${max ? Math.max(2, views / max * 100) : 0}%"></b></div></div><div class="v">${fmtN(views)}<small>${extra}</small></div></div>`;
+}
+function vtWorking(rows, months, byMonth) {
+  const byEp = Object.values(vtGroup(rows, r => r.ep.id)).map(g => ({ ep: g[0].ep, views: sum(g.map(r => r.s.views)), eng: engOf(g.map(r => r.s)) }));
+  const best = [...byEp].sort((a, b) => b.views - a.views)[0];
+  const eng = [...byEp].filter(x => x.views >= 100).sort((a, b) => b.eng - a.eng)[0];
+  const plat = Object.entries(vtGroup(rows, r => r.s.platform)).map(([k, g]) => [k, sum(g.map(r => r.s.views)) / g.length, g.length]).sort((a, b) => b[1] - a[1])[0];
+  const cli = Object.entries(vtGroup(rows, r => r.ep.portal_id)).map(([k, g]) => [k, sum(g.map(r => r.s.views)) / g.length, g.length]).sort((a, b) => b[1] - a[1]);
+  const month = months.map(k => [k, sum((byMonth[k] || []).map(r => r.s.views))]).sort((a, b) => b[1] - a[1])[0];
+  const row = (ic, t, s, act = '') => `<div class="mrow ${act ? 'click' : ''}" ${act}><span class="cat">${ic}</span><div class="t"><div>${t}</div><small>${s}</small></div></div>`;
+  return [
+    best && row(I.sparkle, `Best video: ${esc(vtName(best.ep))}`, `${fmtN(best.views)} views · ${pct1(best.eng)} engagement`, `data-act="vtOpen" data-id="${best.ep.id}"`),
+    eng && eng.ep.id !== best?.ep.id && row(I.chat, `Most engaging: ${esc(vtName(eng.ep))}`, `${pct1(eng.eng)} of viewers liked, commented, shared or saved`, `data-act="vtOpen" data-id="${eng.ep.id}"`),
+    plat && Object.keys(vtGroup(rows, r => r.s.platform)).length > 1 && row(I.play, `${VT_PLATFORMS[plat[0]]} works best`, `${fmtN(plat[1])} views per post on average, across ${plat[2]} post${plat[2] === 1 ? '' : 's'}`),
+    cli.length > 1 && cli[0] && row(I.users, `${esc(portal(cli[0][0])?.name || 'A client')} pulls the most per post`, `${fmtN(cli[0][1])} views per post · ${esc(portal(cli[cli.length - 1][0])?.name || '')} the least at ${fmtN(cli[cli.length - 1][1])}`),
+    month && month[1] && row(I.cal, `Best month: ${monthLabel(month[0], { month: 'long', year: 'numeric' })}`, `${fmtN(month[1])} views`),
+  ].filter(Boolean).join('');
+}
+function vtPerf() {
+  const months = vtRangeMonths(), rows = vtPerfRows(months), t = vtSum(rows);
+  const n = S.vtRange === 'all' ? 0 : months.length;
+  const prevRows = n ? vtPerfRows(Array.from({ length: n }, (_, i) => monthKey(i - 2 * n + 1))) : [], pv = vtSum(prevRows);
+  const byMonth = vtGroup(rows, r => r.m), since = n ? `vs the ${n} months before` : 'all time';
+  const rangeSeg = seg('vtrange', [['3', '3 months'], ['6', '6 months'], ['12', '12 months'], ['all', 'All time']], S.vtRange, 'vtRange');
+  if (!D.stats.length) {
+    const cand = vtSorted(D.episodes.filter(e => VT_IDX[e.stage] >= VT_IDX.approved))[0] || vtSorted(D.episodes)[0];
+    return `<div class="toolbar">${rangeSeg}</div><div class="card vt-pf-empty">${empty('No numbers yet', 'Once a video is posted, open its episode and add the views, likes, comments, shares and saves per platform. This page then shows what’s working by episode, client, platform and month.')}
+      ${cand ? `<button class="btn primary" style="margin-top:14px" data-act="vtStat" data-id="${cand.id}">${I.plus}Add numbers for ${esc(vtName(cand))}</button>` : ''}</div>`;
+  }
+  const byEp = Object.values(vtGroup(rows, r => r.ep.id)).map(g => ({ ep: g[0].ep, rows: g, views: sum(g.map(r => r.s.views)), eng: engOf(g.map(r => r.s)) })).sort((a, b) => b.views - a.views);
+  const topMax = byEp[0]?.views || 0, shownEps = S.vtTopAll ? byEp : byEp.slice(0, 8);
+  const plats = Object.entries(vtGroup(rows, r => r.s.platform)).map(([k, g]) => ({ k, t: vtSum(g) })).sort((a, b) => b.t.views - a.t.views);
+  const clis = Object.entries(vtGroup(rows, r => r.ep.portal_id)).map(([k, g]) => ({ p: portal(k), t: vtSum(g), best: [...g].sort((a, b) => (+b.s.views || 0) - (+a.s.views || 0))[0] })).sort((a, b) => b.t.views - a.t.views);
+  const pmax = plats[0]?.t.views || 0, cmax = clis[0]?.t.views || 0;
+  return `<div class="toolbar">${rangeSeg}<span class="muted" style="font-size:13px">${t.posts} post${t.posts === 1 ? '' : 's'} across ${t.eps} episode${t.eps === 1 ? '' : 's'}</span></div>
+  <div class="stats">
+    <div class="card stat"><div class="k">${I.eye}Views</div><div class="v">${fmtN(t.views)}</div><div class="s">${vtDelta(t.views, pv.views) || since}${pv.views ? ` <span class="muted">${since}</span>` : ''}</div></div>
+    <div class="card stat"><div class="k">${I.play}Per post</div><div class="v">${fmtN(t.avg)}</div><div class="s">${vtDelta(t.avg, pv.avg) || 'average views'}${pv.avg ? ' <span class="muted">per post</span>' : ''}</div></div>
+    <div class="card stat"><div class="k">${I.chat}Engagement</div><div class="v">${t.views ? pct1(t.eng) : '—'}</div><div class="s">${vtDelta(t.eng, pv.eng) || 'likes, comments, shares, saves'}${pv.eng ? ' <span class="muted">of views</span>' : ''}</div></div>
+    <div class="card stat"><div class="k">${I.users}New followers</div><div class="v">${fmtN(sum(rows.map(r => r.s.followers)))}</div><div class="s">${vtDelta(sum(rows.map(r => r.s.followers)), sum(prevRows.map(r => r.s.followers))) || 'from these posts'}</div></div>
+  </div>
+  <div class="pgrid">
+    <section class="card s7"><div class="card-head"><div><h3>Views by month</h3><div class="sub">By the date each post went live</div></div></div>
+      ${rows.length ? vtMonthChart(months, byMonth) + vtMonthTable(months, byMonth) : `<div class="empty">Nothing posted in this range.</div>`}</section>
+    <section class="card s5"><div class="card-head"><div><h3>${I.sparkle}What’s working</h3><div class="sub">Read from the numbers in this range</div></div></div>
+      ${vtWorking(rows, months, byMonth) || '<div class="empty">Add a few more posts and patterns will show here.</div>'}</section>
+    <section class="card s7"><div class="card-head"><div><h3>Top episodes</h3><div class="sub">All platforms added together</div></div></div>
+      ${shownEps.map((x, i) => vtRankRow(i + 1, `${esc(portal(x.ep.portal_id)?.name || '')} · ${esc(vtName(x.ep).replace(/^.*· /, ''))}${x.ep.title ? ` <span class="muted" style="font-weight:500">${esc(x.ep.title)}</span>` : ''}`,
+        `${x.rows.map(r => VT_PLATFORMS[r.s.platform]).join(', ')} · ${pct1(x.eng)} engagement${x.rows[0].s.posted ? ' · ' + fmtD(x.rows.map(r => r.s.posted).filter(Boolean).sort()[0]) : ''}`, x.views, topMax, `data-act="vtOpen" data-id="${x.ep.id}"`, 'views')).join('') || '<div class="empty">Nothing in this range.</div>'}
+      ${byEp.length > 8 ? `<button class="more ${S.vtTopAll ? 'open' : ''}" data-act="vtTopAll">${I.right}${S.vtTopAll ? 'Show fewer' : `All ${byEp.length} episodes`}</button>` : ''}</section>
+    <div class="s5" style="display:grid;gap:16px">
+      <section class="card"><div class="card-head"><div><h3>By platform</h3><div class="sub">Where the views come from</div></div></div>
+        ${plats.map((x, i) => vtRankRow(vtPlatMark(x.k), VT_PLATFORMS[x.k], `${x.t.posts} post${x.t.posts === 1 ? '' : 's'} · ${fmtN(x.t.avg)} per post · ${pct1(x.t.eng)} engagement`, x.t.views, pmax, '', 'views')).join('') || '<div class="empty">Nothing in this range.</div>'}</section>
+      ${S.vtClient === 'all' && clis.length > 1 ? `<section class="card"><div class="card-head"><div><h3>By client</h3><div class="sub">Average per post is the fair comparison</div></div></div>
+        ${clis.map(x => vtRankRow(av(x.p, 'sm'), esc(x.p?.name || 'Client'), `${x.t.posts} post${x.t.posts === 1 ? '' : 's'} · ${fmtN(x.t.avg)} per post · best ${esc(x.best ? 'Ep ' + x.best.ep.number : '—')}`, x.t.views, cmax, x.p ? `data-act="vtClient" data-v="${x.p.id}"` : '', 'views')).join('')}</section>` : ''}
+    </div>
+  </div>`;
+}
+/* episode sheet: the numbers per platform */
+function vtSheetStats(ep) {
+  const st = statsFor(ep).sort((a, b) => (+b.views || 0) - (+a.views || 0)), total = sum(st.map(s => s.views));
+  return `<div class="vt-links" style="margin-top:4px"><label class="l" style="display:flex;justify-content:space-between;align-items:center">Performance${total ? `<span style="text-transform:none;letter-spacing:0">${fmtN(total)} views · ${pct1(engOf(st))} engagement</span>` : ''}</label>
+    ${st.map(s => `<div class="mrow click vt-stat" data-act="vtStat" data-id="${ep.id}" data-sid="${s.id}">${vtPlatMark(s.platform)}<div class="t"><div>${VT_PLATFORMS[s.platform] || esc(s.platform)}${s.posted ? ` · ${fmtD(s.posted)}` : ''}</div><small>${fmtN(s.likes)} likes · ${fmtN(s.comments)} comments · ${fmtN(s.shares)} shares · ${fmtN(s.saves)} saves${+s.followers ? ` · +${fmtN(s.followers)} followers` : ''}</small></div><span class="amt">${fmtN(s.views)}<small>views</small></span></div>`).join('')}
+    <button type="button" class="btn sm ghost" style="margin-top:${st.length ? 8 : 0}px" data-act="vtStat" data-id="${ep.id}">${I.plus}${st.length ? 'Add another platform' : 'Add views & engagement'}</button></div>`;
+}
+function vtStatForm(ep, sid) {
+  const s = sid ? D.stats.find(x => x.id === sid) : null, p = portal(ep.portal_id), used = statsFor(ep).map(x => x.platform);
+  const num = (n, l) => fIn(n, l, s ? s[n] : '', 'type="number" min="0" step="1" inputmode="numeric" placeholder="0"');
+  const firstFree = Object.keys(VT_PLATFORMS).find(k => !used.includes(k)) || 'instagram';
+  formSheet({ kicker: `${p?.name || 'Client'} · Episode ${ep.number}`, title: s ? `${VT_PLATFORMS[s.platform]} numbers` : 'Add numbers', submit: s ? 'Save' : 'Add',
+    body: `<div class="two">${fSel('platform', 'Platform', Object.entries(VT_PLATFORMS).map(([k, l]) => [k, l + (used.includes(k) && k !== s?.platform ? ' (already added)' : '')]), s?.platform || firstFree)}
+        <div class="fld"><label class="l">Posted on</label><input type="date" name="posted" value="${esc(s?.posted || (epApprovedAt(ep) || '').slice(0, 10))}"></div></div>
+      <div class="three">${num('views', 'Views')}${num('likes', 'Likes')}${num('comments', 'Comments')}</div>
+      <div class="three">${num('shares', 'Shares')}${num('saves', 'Saves')}${num('followers', 'New followers')}</div>
+      ${fIn('link', 'Post link', s?.link, 'placeholder="https://…" inputmode="url"')}${fTa('notes', 'Notes', s?.notes, 'What worked, what didn’t')}
+      <p class="muted" style="font-size:13px">Come back and update these as the numbers grow; the latest ones count. The month is taken from the posted date.</p>`,
+    onSubmit: async f => {
+      const platform = f.get('platform'), other = statsFor(ep).find(x => x.platform === platform && x.id !== s?.id);
+      const n = k => Math.max(0, Math.round(+String(f.get(k)).replace(/[,\s]/g, '') || 0));
+      const row = { id: other?.id || s?.id || 's' + uid(10), portal_id: ep.portal_id, episode_id: ep.id, platform, posted: f.get('posted') || null,
+        views: n('views'), likes: n('likes'), comments: n('comments'), shares: n('shares'), saves: n('saves'), followers: n('followers'), link: f.get('link').trim(), notes: f.get('notes'), updated_at: new Date().toISOString() };
+      if (other && s && other.id !== s.id) { await vtDelStat(s, true); }
+      return vtSaveStat(row, other || s);
+    },
+    onDelete: s ? () => vtDelStat(s) : null,
+    onClose: () => setTimeout(() => { if (!SH && vtEp(ep.id)) openEpisode(ep.id); }, 0) });
+}
+async function vtSaveStat(row, prev) {
+  const i = D.stats.findIndex(x => x.id === row.id);
+  if (i >= 0) D.stats[i] = row; else D.stats.push(row);
+  const { error } = await sb.from('vt_stats').upsert(row);
+  if (error) { toast('Couldn’t save: ' + error.message); if (prev && i >= 0) D.stats[i] = prev; else D.stats.splice(D.stats.indexOf(row), 1); return false; }
+  const ep = vtEp(row.episode_id);
+  vtLog({ type: 'stats', episode_id: row.episode_id, portal_id: row.portal_id, text: `${VT_PLATFORMS[row.platform] || row.platform}: ${fmtN(row.views)} views` });
+  if (ep) toast(`${vtName(ep)} · ${VT_PLATFORMS[row.platform]} saved`);
+  render(false); return true;
+}
+async function vtDelStat(s, quiet) {
+  const i = D.stats.findIndex(x => x.id === s.id); if (i >= 0) D.stats.splice(i, 1);
+  const { error } = await sb.from('vt_stats').delete().eq('id', s.id);
+  if (error) { D.stats.push(s); toast('Couldn’t delete: ' + error.message); return false; }
+  if (!quiet) { render(false); toast(`${VT_PLATFORMS[s.platform]} numbers removed`, async () => { const r = await sb.from('vt_stats').upsert(s); if (!r.error && !D.stats.some(x => x.id === s.id)) { D.stats.push(s); render(false); } }); }
+  return true;
+}
+const vtPortalPerf = pid => { const st = D.stats.filter(s => s.portal_id === pid); if (!st.length) return ''; const best = [...st].sort((a, b) => (+b.views || 0) - (+a.views || 0))[0], ep = vtEp(best.episode_id); return `<div class="vt-stats-l">${I.eye}${fmtN(sum(st.map(s => s.views)))} views across ${st.length} post${st.length === 1 ? '' : 's'} · ${pct1(engOf(st))} engagement${ep ? ` · best Ep ${ep.number} (${fmtN(best.views)})` : ''}</div>`; };
 
 /* ---------- actions (one delegated listener for the whole app) ---------- */
 const A = {
@@ -1817,8 +1975,11 @@ const A = {
   copy: el => { navigator.clipboard?.writeText(el.dataset.v).then(() => toast(`Copied ${el.dataset.v}. Paste it into Claude.`), () => toast(el.dataset.v)); },
   // videos
   vtView: el => { S.vtView = el.dataset.v; lsSet('hub.vtView', S.vtView); $('#vtbody').innerHTML = vtBody(); $$('[data-seg="vtview"] button').forEach(b => b.classList.toggle('on', b === el)); syncSegs(); },
-  vtClient: el => { S.vtClient = el.dataset.v; $$('[data-act="vtClient"]').forEach(b => b.classList.toggle('on', b === el)); $('#vtbody').innerHTML = vtBody(); },
+  vtClient: el => { S.vtClient = el.dataset.v; $$('.fchip[data-act="vtClient"]').forEach(b => b.classList.toggle('on', b.dataset.v === S.vtClient)); $('#vtbody').innerHTML = vtBody(); syncSegs(); },
   vtOpen: el => { closeMenu(); openEpisode(el.dataset.id); },
+  vtRange: el => { S.vtRange = el.dataset.v; lsSet('hub.vtRange', S.vtRange); $('#vtbody').innerHTML = vtBody(); syncSegs(); },
+  vtStat: el => { closeMenu(); const ep = vtEp(el.dataset.id); if (ep) vtStatForm(ep, el.dataset.sid); },
+  vtTopAll: () => { S.vtTopAll = !S.vtTopAll; $('#vtbody').innerHTML = vtBody(); syncSegs(); },
   vtNew: el => vtNewEpisode(el.dataset.pid),
   vtMenu: el => vtMenu(el, el.dataset.id),
   vtMove: el => { closeMenu(); const ep = vtEp(el.dataset.id); if (!ep || ep.stage === el.dataset.v) return; const from = ep.stage; vtSetStage(ep, el.dataset.v).then(ok => { if (!ok) return; render(false); if (SH?.kind === 'vtep') redrawSheet(); toast(`${vtName(ep)} → ${VT_STAGES[VT_IDX[ep.stage]].label}`, () => vtSetStage(ep, from)); }); },
