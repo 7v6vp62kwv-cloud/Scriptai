@@ -7,7 +7,7 @@ create table if not exists public.vt_episodes (
   portal_id  uuid not null references public.portals(id) on delete cascade,
   number     int  not null,
   title      text not null default '',
-  stage      text not null check (stage in ('scripted','script_approved','sent_to_client','footage_uploaded','editing','waiting_approval','client_approval','approved','feedback_recorded')),
+  stage      text not null check (stage in ('scripted','script_approved','sent_to_client','footage_uploaded','editing','waiting_approval','client_approval','approved','feedback_recorded','done')),
   history    jsonb not null default '[]',     -- [{stage, at (ISO), via?, back?}]
   notes      text not null default '',
   links      jsonb not null default '{}',     -- {notion, drive, video}
@@ -31,6 +31,8 @@ create table if not exists public.vt_activity (
   text       text not null default ''
 );
 create index if not exists vt_episodes_portal on public.vt_episodes (portal_id);
+-- the hub signs in as an admin (authenticated); the policies below decide who may see rows, these grants let them through at all
+grant select, insert, update, delete on public.vt_episodes, public.vt_activity to authenticated, service_role;
 create index if not exists vt_activity_at on public.vt_activity (at desc);
 
 -- Realtime, so the hub updates live when the skill moves an episode
@@ -83,7 +85,7 @@ language plpgsql security definer set search_path = public as $$
 declare
   v_portal public.portals;
   v_ep     public.vt_episodes;
-  v_order  text[] := array['scripted','script_approved','sent_to_client','footage_uploaded','editing','waiting_approval','client_approval','approved','feedback_recorded'];
+  v_order  text[] := array['scripted','script_approved','sent_to_client','footage_uploaded','editing','waiting_approval','client_approval','approved','feedback_recorded','done'];
   v_back   boolean;
   v_from   text;
 begin
@@ -192,6 +194,7 @@ create table if not exists public.vt_stats (
   unique (episode_id, platform)
 );
 create index if not exists vt_stats_portal on public.vt_stats (portal_id);
+grant select, insert, update, delete on public.vt_stats to authenticated, service_role;
 alter publication supabase_realtime add table public.vt_stats;
 alter table public.vt_stats enable row level security;
 drop policy if exists "vt stats admin" on public.vt_stats;

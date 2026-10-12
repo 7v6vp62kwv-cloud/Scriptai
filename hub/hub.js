@@ -1272,6 +1272,7 @@ function openSheet(kind, ctx, draw, opts = {}) {
 }
 function redrawSheet() { if (!SH) return; const b = $('.sh-body', SH.box), y = b?.scrollTop; SH.box.innerHTML = SH.draw(SH.ctx); syncSegs(SH.box); const b2 = $('.sh-body', SH.box); if (b2 && y) b2.scrollTop = y; }
 function closeSheet(instant) {
+  dpClose();
   if (!SH) return;
   const s = SH; SH = null;
   try { s.onClose?.(); } catch (e) { console.error(e); }
@@ -1279,7 +1280,7 @@ function closeSheet(instant) {
   if (instant || reduceMotion.matches) s.el.remove(); else { s.el.classList.add('out'); setTimeout(() => s.el.remove(), 260); }
 }
 addEventListener('keydown', e => {
-  if (e.key === 'Escape') { if ($('.menu')) return closeMenu(); if ($('.lightbox')) return $('.lightbox').remove(); if (SH) return closeSheet(); if (dock.open) dock.toggle(false); }
+  if (e.key === 'Escape') { if (DP.pop) return dpClose(); if ($('.menu')) return closeMenu(); if ($('.lightbox')) return $('.lightbox').remove(); if (SH) return closeSheet(); if (dock.open) dock.toggle(false); }
   // Enter sends in chat boxes; Shift+Enter for a new line
   const ta = e.target.closest?.('.composer textarea, .compose-row textarea');
   if (ta && e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); ta.form.requestSubmit(); }
@@ -1423,10 +1424,11 @@ const VT_STAGES = [
   { id: 'waiting_approval',  label: 'Ready for my review',         short: 'My review',      who: 'me',     next: 'Review the video',         inbox: { kind: 'approval', title: (c, n) => `Review ${c} episode ${n}` } },
   { id: 'client_approval',   label: 'Waiting for client approval', short: 'Client sign-off',who: 'client', next: 'Client is reviewing' },
   { id: 'approved',          label: 'Approved',                    short: 'Approved',       who: 'me',     next: 'Record the feedback video', inbox: { kind: 'todo', title: (c, n) => `Record feedback video for ${c} ep ${n}` } },
-  { id: 'feedback_recorded', label: 'Feedback video recorded',     short: 'Done',           who: 'none',   next: 'Done' },
+  { id: 'feedback_recorded', label: 'Feedback video recorded',     short: 'Feedback',       who: 'none',   next: 'Mark it completed when you’re done with it' },
+  { id: 'done',              label: 'Completed',                   short: 'Done',           who: 'none',   next: 'Nothing left to do' },
 ];
 const VT_IDX = Object.fromEntries(VT_STAGES.map((s, i) => [s.id, i]));
-const VT_FINAL = 'feedback_recorded';
+const VT_FINAL = 'done';
 // Inbox titles the skill writes that mean "this episode is stuck on something"
 const VT_ATTN = /^(attention:|fix send for|chase |answer (script|edit) question for|wake your mac for|check .* video|need from you:)/i;
 const vtIsStage = s => typeof s === 'string' && Object.prototype.hasOwnProperty.call(VT_IDX, s);
@@ -1529,10 +1531,10 @@ function vtChain(ep, from, to) {
   if (from === 'scripted' && VT_IDX[to] > VT_IDX.scripted) vtResolve(ep, /approve .*script/i, 'done');
   if (['footage_uploaded', 'editing'].includes(from) && VT_IDX[to] > VT_IDX.editing) vtResolve(ep, /^edit /i, 'done');
   if (from === 'waiting_approval' && VT_IDX[to] > VT_IDX.waiting_approval) vtResolve(ep, /^review /i, 'approved');
-  if (from === 'approved' && to === VT_FINAL) vtResolve(ep, /^record feedback video/i, 'done');
+  if (from === 'approved' && VT_IDX[to] > VT_IDX.approved) vtResolve(ep, /^record feedback video/i, 'done');
   if (s.inbox) vtEnsureInbox(ep, s.inbox);
   if (to === 'client_approval') vtEnsureApprovalTask(ep);
-  if (to === 'approved' || to === VT_FINAL) { const t = ep.task_id && task(ep.task_id); if (t && !t.done) setTaskDone(t, true); }
+  if (VT_IDX[to] >= VT_IDX.approved) { const t = ep.task_id && task(ep.task_id); if (t && !t.done) setTaskDone(t, true); }
 }
 /* the client signs off in their portal through a normal deliverable with "Ask them to approve it" on */
 async function vtEnsureApprovalTask(ep) {
@@ -1560,7 +1562,7 @@ function vtOnInbox(x, status) {
     else if (status === 'changes') vtUpdate(ep, { blocked: { reason: 'Changes needed on the video' + (x.response ? ': ' + x.response : ''), at: new Date().toISOString() } }, { type: 'blocked', text: 'changes requested' });
     return;
   }
-  if (/^record feedback video/.test(t) && ep.stage === 'approved') return vtSetStage(ep, VT_FINAL, 'hub-inbox');
+  if (/^record feedback video/.test(t) && ep.stage === 'approved') return vtSetStage(ep, 'feedback_recorded', 'hub-inbox');
 }
 /* the client approved (or asked for changes on) the linked deliverable */
 function vtOnMark(pid, itemId, value) {
@@ -1570,7 +1572,7 @@ function vtOnMark(pid, itemId, value) {
 }
 /* a derived "Needed from me" row ticked: take the obvious next step */
 function vtAdvance(ep) {
-  const nxt = { scripted: 'script_approved', footage_uploaded: 'editing', waiting_approval: 'client_approval', approved: VT_FINAL }[ep.stage];
+  const nxt = { scripted: 'script_approved', footage_uploaded: 'editing', waiting_approval: 'client_approval', approved: 'feedback_recorded', feedback_recorded: 'done' }[ep.stage];
   if (nxt) vtSetStage(ep, nxt, 'hub');
 }
 
@@ -1909,6 +1911,99 @@ async function vtDelStat(s, quiet) {
   return true;
 }
 const vtPortalPerf = pid => { const st = D.stats.filter(s => s.portal_id === pid); if (!st.length) return ''; const best = [...st].sort((a, b) => (+b.views || 0) - (+a.views || 0))[0], ep = vtEp(best.episode_id); return `<div class="vt-stats-l">${I.eye}${fmtN(sum(st.map(s => s.views)))} views across ${st.length} post${st.length === 1 ? '' : 's'} · ${pct1(engOf(st))} engagement${ep ? ` · best Ep ${ep.number} (${fmtN(best.views)})` : ''}</div>`; };
+
+
+/* ---------- date picker (our own, instead of the browser's) ----------
+   Every <input type="date"> becomes a hidden input plus a glass button; picking a day writes the value back
+   and fires input/change so forms and data-chg handlers behave exactly as before. */
+const DP = { pop: null, input: null, btn: null, view: '' };
+const dpFmt = k => fmtD(k, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+function dpLabel(inp) {
+  const b = inp._btn; if (!b) return;
+  const v = /^\d{4}-\d{2}-\d{2}$/.test(inp.value) ? inp.value : '';
+  b.classList.toggle('empty', !v);
+  b.innerHTML = `${I.cal}<span>${v ? dpFmt(v) : 'Pick a date'}</span>${v && !inp.dataset.dpRequired ? `<i class="x" data-dp="clear" title="Clear">${I.x}</i>` : ''}`;
+}
+function dpEnhance(root) {
+  const list = root.matches?.('input[type="date"]') ? [root] : $$('input[type="date"]', root);
+  list.forEach(inp => {
+    if (inp.dataset.dp) return;
+    inp.dataset.dp = '1'; if (inp.required) { inp.required = false; inp.dataset.dpRequired = '1'; }
+    inp.type = 'hidden';
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'dp-btn'; b.setAttribute('aria-haspopup', 'dialog');
+    const lab = inp.closest('.fld')?.querySelector('label.l')?.textContent.trim() || inp.getAttribute('aria-label') || inp.name || 'Date';
+    b.setAttribute('aria-label', lab); b._inp = inp; inp._btn = b;
+    inp.before(b); dpLabel(inp);
+  });
+}
+new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => n.nodeType === 1 && dpEnhance(n)))).observe(document.documentElement, { childList: true, subtree: true });
+dpEnhance(document);
+document.addEventListener('click', e => {
+  const x = e.target.closest('.dp-btn .x'); if (x) { e.stopPropagation(); dpWrite(x.closest('.dp-btn')._inp, ''); return; }
+  const b = e.target.closest('.dp-btn'); if (!b) return;
+  if (DP.btn === b) dpClose(); else dpOpen(b);
+});
+function dpWrite(inp, k) {
+  if (inp.value === k) return;
+  inp.value = k; dpLabel(inp);
+  inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new Event('change', { bubbles: true }));
+}
+function dpOpen(b) {
+  dpClose(); closeMenu();
+  const inp = b._inp, v = /^\d{4}-\d{2}-\d{2}$/.test(inp.value) ? inp.value : '';
+  DP.input = inp; DP.btn = b; DP.view = (v || todayKey()).slice(0, 7); b.classList.add('open');
+  const pop = document.createElement('div'); pop.className = 'dp-pop'; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', b.getAttribute('aria-label') || 'Choose a date');
+  document.body.appendChild(pop); DP.pop = pop; dpDraw(); dpPlace();
+  pop.addEventListener('click', e => {
+    const t = e.target.closest('button'); if (!t) return;
+    const a = t.dataset.dp;
+    if (a === 'prev' || a === 'next') { const [y, m] = DP.view.split('-').map(Number); DP.view = ymd(new Date(y, m - 1 + (a === 'next' ? 1 : -1), 1)).slice(0, 7); dpDraw(); $('.dp-day:not(.out)', pop)?.focus({ preventScroll: true }); }
+    else if (a === 'today') dpPick(todayKey()); else if (a === 'clear') dpPick(''); else if (t.dataset.d) dpPick(t.dataset.d);
+  });
+  pop.addEventListener('keydown', dpKeys);
+  ($('.dp-day.sel', pop) || $('.dp-day.today', pop) || $('.dp-day:not(.out)', pop))?.focus({ preventScroll: true });
+  addEventListener('pointerdown', dpOutside, true); addEventListener('scroll', dpClose, true); addEventListener('resize', dpClose);
+}
+function dpDraw() {
+  const [y, m] = DP.view.split('-').map(Number), first = new Date(y, m - 1, 1), start = (first.getDay() + 6) % 7, t = todayKey(), v = DP.input.value;
+  const cells = Array.from({ length: 42 }, (_, i) => { const d = new Date(y, m - 1, i - start + 1); return { k: ymd(d), out: d.getMonth() !== m - 1, d: d.getDate() }; });
+  DP.pop.innerHTML = `<div class="dp-head"><button type="button" class="ib sm" data-dp="prev" aria-label="Previous month">${I.left}</button><b aria-live="polite">${first.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</b><button type="button" class="ib sm" data-dp="next" aria-label="Next month">${I.right}</button></div>
+    <div class="dp-grid" role="grid">${['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(d => `<span class="dp-wd" aria-hidden="true">${d}</span>`).join('')}
+    ${cells.map(c => `<button type="button" role="gridcell" class="dp-day ${c.out ? 'out' : ''} ${c.k === t ? 'today' : ''} ${c.k === v ? 'sel' : ''}" data-d="${c.k}" tabindex="-1" aria-label="${fmtD(c.k, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}" ${c.k === v ? 'aria-selected="true"' : ''}>${c.d}</button>`).join('')}</div>
+    <div class="dp-foot"><button type="button" class="btn sm ghost" data-dp="clear" ${DP.input.dataset.dpRequired ? 'disabled' : ''}>Clear</button><button type="button" class="btn sm" data-dp="today">Today</button></div>`;
+}
+function dpPlace() {
+  const r = DP.btn.getBoundingClientRect(), pop = DP.pop, w = pop.offsetWidth, h = pop.offsetHeight;
+  let left = Math.min(Math.max(10, r.left), innerWidth - w - 10), top = r.bottom + 6;
+  if (top + h > innerHeight - 10) top = r.top - h - 6;
+  if (top < 10) { top = Math.max(10, (innerHeight - h) / 2); pop.style.transformOrigin = 'center'; }
+  pop.style.left = left + 'px'; pop.style.top = top + 'px';
+}
+function dpPick(k) { const inp = DP.input, b = DP.btn; dpWrite(inp, k); dpClose(); b?.focus({ preventScroll: true }); }
+function dpFocus(k) {
+  if (k.slice(0, 7) !== DP.view) { DP.view = k.slice(0, 7); dpDraw(); }
+  $(`.dp-day[data-d="${k}"]`, DP.pop)?.focus({ preventScroll: true });
+}
+function dpKeys(e) {
+  const cur = e.target.closest?.('.dp-day')?.dataset.d; if (!cur) return;
+  const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[e.key];
+  if (step) { e.preventDefault(); return dpFocus(addDays(cur, step)); }
+  if (e.key === 'PageUp' || e.key === 'PageDown') { e.preventDefault(); const d = parseD(cur); d.setMonth(d.getMonth() + (e.key === 'PageUp' ? -1 : 1)); return dpFocus(ymd(d)); }
+  if (e.key === 'Home' || e.key === 'End') { e.preventDefault(); const d = parseD(cur); d.setDate(e.key === 'Home' ? 1 : new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()); return dpFocus(ymd(d)); }
+}
+function dpOutside(e) { if (!DP.pop) return; if (DP.pop.contains(e.target) || DP.btn.contains(e.target)) return; e.stopPropagation(); dpClose(); }
+function dpClose() {
+  if (!DP.pop) return;
+  DP.pop.remove(); DP.btn?.classList.remove('open'); DP.pop = null; DP.btn = null; DP.input = null;
+  removeEventListener('pointerdown', dpOutside, true); removeEventListener('scroll', dpClose, true); removeEventListener('resize', dpClose);
+}
+/* a date the browser used to insist on: check it ourselves before the form handler runs */
+document.addEventListener('submit', e => {
+  const miss = $$('input[data-dp-required]', e.target).find(i => !i.value); if (!miss) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  const b = miss._btn; if (b) { b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); b.focus(); }
+  toast('Pick a date first');
+}, true);
 
 /* ---------- actions (one delegated listener for the whole app) ---------- */
 const A = {

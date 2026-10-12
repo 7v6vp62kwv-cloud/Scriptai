@@ -80,6 +80,7 @@ The client is matched to their portal by name: full name, first name ("Callum" f
 | waiting_approval | the finished video is uploaded to "waiting for approval" (Final video watcher) |
 | approved | Stan approves the video, in chat or in his management side ("Once approved", step a) |
 | feedback_recorded | Stan says in chat that the feedback video is recorded |
+| done | never set by the chain: Stan marks an episode Completed himself on the Videos page once he is finished with it |
 
 Stan approving in chat goes straight to `approved`. The chain never uses the hub's own `client_approval` stage (client sign-off in the portal); that one is only for episodes Stan sends for sign-off himself from the Videos page.
 
