@@ -1,5 +1,5 @@
 // Stan Media Hub — offline shell. Bump VERSION on every deploy so phones pick up the new files.
-const VERSION = 'v20261012120000';
+const VERSION = 'v20261012134500';
 const CACHE = `smhub-${VERSION}`;
 const SHELL = ['./', './index.html', './hub.css', './hub.js', './manifest.webmanifest', './apple-touch-icon.png', './icon-192.png', './icon-512.png',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js'];

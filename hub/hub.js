@@ -1591,7 +1591,7 @@ function pageVideos() {
     <div class="card stat ${onMe ? 'alert' : ''}"><div class="k">${I.flag}Waiting on me</div><div class="v">${onMe}</div><div class="s">${open.filter(vtBlocked).length ? `${open.filter(vtBlocked).length} blocked` : 'Nothing blocked'}</div></div>
     <div class="card stat"><div class="k">${I.check}Delivered this week</div><div class="v">${delivered}</div><div class="s">Approved in the last 7 days</div></div>
   </div>
-  <div class="toolbar">${seg('vtview', [['board', 'Board'], ['clients', 'By client']], S.vtView, 'vtView')}
+  <div class="toolbar vt-toolbar">${seg('vtview', [['board', 'Board'], ['clients', 'By client']], S.vtView, 'vtView')}
     <div class="chips grow"><button class="fchip ${S.vtClient === 'all' ? 'on' : ''}" data-act="vtClient" data-v="all">All clients</button>${ps.map(p => `<button class="fchip ${S.vtClient === p.id ? 'on' : ''}" data-act="vtClient" data-v="${p.id}">${av(p, 'sm')}${esc(p.name)}</button>`).join('')}</div>
     <label class="search">${I.search}<input type="search" placeholder="Search episodes" value="${esc(S.vtQ)}" data-in="vtq" aria-label="Search episodes"></label></div>
   <div id="vtbody">${vtBody()}</div>
