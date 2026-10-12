@@ -98,8 +98,9 @@ const S = {
   view: lsGet('hub.taskView', 'clients'), taskClient: 'all', qaVis: lsGet('hub.qaVis', '1') === '1',
   showDone: {}, obSel: lsGet('hub.obSel', ''), obOpen: {}, showPast: false, showAllPosts: false, showDoneNeeds: false, payAll: false,
   authRole: lsGet('hub.authRole', 'client'), authMode: 'signin',
+  vtView: lsGet('hub.vtView', 'board'), vtClient: 'all', vtQ: '', vtActAll: false,
 };
-const D = { portals: [], access: {}, tasks: [], clients: {}, expenses: [], inbox: [], marks: {}, comments: [], loadedAt: 0 };
+const D = { portals: [], access: {}, tasks: [], clients: {}, expenses: [], inbox: [], marks: {}, comments: [], episodes: [], vact: [], loadedAt: 0 };
 const portal = id => D.portals.find(p => p.id === id);
 const task = id => D.tasks.find(t => t.id === id);
 const hc = pid => D.clients[pid] || { portal_id: pid, status: 'active', ob_done: {}, retainer: 0, cycle: 'monthly', plan: '', notes: '' };
@@ -124,7 +125,7 @@ const lastPortalId = () => { const id = lsGet('hub.lastPortal', ''); return port
 function route() {
   const [a = '', b = ''] = location.hash.replace(/^#\/?/, '').split('/');
   if (S.admin) {
-    if (['tasks', 'finance', 'onboarding'].includes(a)) return { mode: 'manager', page: a };
+    if (['tasks', 'finance', 'onboarding', 'videos'].includes(a)) return { mode: 'manager', page: a };
     if (a === 'portal') return { mode: 'portal', pid: portal(b) ? b : lastPortalId() };
     if (a === 'needed') return { mode: 'needed' };
     return { mode: 'manager', page: 'tasks' };
@@ -227,7 +228,8 @@ async function loadAll() {
     marks: sb.from('portal_marks').select('*'),
     comments: sb.from('portal_comments').select('*').order('created_at').limit(5000),
   };
-  if (S.admin) { q.clients = sb.from('hub_clients').select('*'); q.expenses = sb.from('hub_expenses').select('*').order('date'); q.inbox = sb.from('hub_inbox').select('*').order('created_at'); }
+  if (S.admin) { q.clients = sb.from('hub_clients').select('*'); q.expenses = sb.from('hub_expenses').select('*').order('date'); q.inbox = sb.from('hub_inbox').select('*').order('created_at');
+    q.episodes = sb.from('vt_episodes').select('*').order('created_at'); q.vact = sb.from('vt_activity').select('*').order('at', { ascending: false }).limit(400); }
   const keys = Object.keys(q), res = await Promise.all(Object.values(q)), r = Object.fromEntries(keys.map((k, i) => [k, res[i]]));
   const bad = res.find(x => x.error);
   if (bad) toast('Couldn’t load everything: ' + bad.error.message);
@@ -237,7 +239,8 @@ async function loadAll() {
   D.tasks = r.tasks.data || [];
   D.marks = {}; (r.marks.data || []).forEach(m => D.marks[m.portal_id + ':' + m.item_id] = m);
   D.comments = r.comments.data || [];
-  if (S.admin) { D.clients = {}; (r.clients.data || []).forEach(c => D.clients[c.portal_id] = c); D.expenses = r.expenses.data || []; D.inbox = r.inbox.data || []; }
+  if (S.admin) { D.clients = {}; (r.clients.data || []).forEach(c => D.clients[c.portal_id] = c); D.expenses = r.expenses.data || []; D.inbox = r.inbox.data || [];
+    D.episodes = (r.episodes.data || []).map(e => vtSaveT[e.id] ? vtEp(e.id) || e : e); D.vact = r.vact.data || []; }
   D.loadedAt = Date.now();
 }
 let live = null;
@@ -258,7 +261,9 @@ function startLive() {
   on('portal_marks', e => {
     const r = e.eventType === 'DELETE' ? e.old : e.new; if (e.eventType === 'DELETE') { delete D.marks[r.portal_id + ':' + r.item_id]; return; }
     if (S.admin && r.value === 'changes' && r.by_email !== me() && D.marks[r.portal_id + ':' + r.item_id]?.value !== 'changes') toast(`${portal(r.portal_id)?.name || 'A client'} asked for changes`);
+    const was = D.marks[r.portal_id + ':' + r.item_id]?.value;
     D.marks[r.portal_id + ':' + r.item_id] = r;
+    if (S.admin && was !== r.value) vtOnMark(r.portal_id, r.item_id, r.value);
   });
   on('portal_comments', e => {
     if (e.eventType === 'DELETE') { D.comments = D.comments.filter(c => c.id !== e.old.id); return; }
@@ -272,6 +277,8 @@ function startLive() {
     on('hub_clients', e => { if (e.eventType === 'DELETE') delete D.clients[e.old.portal_id]; else if (!clientSaveT[e.new.portal_id]) D.clients[e.new.portal_id] = e.new; });
     on('hub_expenses', e => upsert(D.expenses, e));
     on('hub_inbox', e => { const fresh = e.eventType === 'INSERT' && !D.inbox.some(x => x.id === e.new.id); upsert(D.inbox, e); if (fresh) toast('Needs you: ' + e.new.title); });
+    on('vt_episodes', e => { if (!(e.eventType !== 'DELETE' && vtSaveT[e.new.id])) upsert(D.episodes, e); });
+    on('vt_activity', e => { if (e.eventType !== 'DELETE' && !D.vact.some(a => a.id === e.new.id)) D.vact.unshift(e.new); });
   }
   live.subscribe();
 }
@@ -280,7 +287,7 @@ let liveT;
 const typing = () => { const a = document.activeElement; return a && $('#view').contains(a) && /INPUT|TEXTAREA|SELECT/.test(a.tagName); };
 function liveRender() {
   clearTimeout(liveT);
-  liveT = setTimeout(() => { SH?.live?.(); dock.redraw(); if (typing()) { S.deferred = true; return; } render(false); }, 80);
+  liveT = setTimeout(() => { SH?.live?.(); dock.redraw(); if (typing()) { S.deferred = true; return; } render(false); if (SH?.kind === 'vtep') redrawSheet(); }, 80);
 }
 document.addEventListener('focusout', () => setTimeout(() => { if (S.deferred && !typing()) { S.deferred = false; render(false); } }, 150));
 let laterT;
@@ -347,6 +354,7 @@ function setTaskDone(t, on, el) {
   renderLater();
 }
 async function deleteTask(t) {
+  D.episodes.filter(e => e.task_id === t.id).forEach(e => vtUpdate(e, { task_id: null }));
   D.tasks = D.tasks.filter(x => x !== t); closeSheet(); render(false);
   const { error } = await sb.from('hub_tasks').delete().eq('id', t.id);
   if (error) { D.tasks.push(t); render(false); return toast('Couldn’t delete: ' + error.message); }
@@ -360,6 +368,7 @@ async function setMark(pid, item, value) {
   if (S.preview) { render(false); return toast('Preview only. Nothing is saved in client view.'); }
   const key = pid + ':' + item, prev = D.marks[key];
   if (value) D.marks[key] = { portal_id: pid, item_id: item, value, by_email: me(), updated_at: new Date().toISOString() }; else delete D.marks[key];
+  if (S.admin && prev?.value !== value) vtOnMark(pid, item, value);
   SH?.live?.(); renderLater(400);
   const { error } = value
     ? await sb.from('portal_marks').upsert({ portal_id: pid, item_id: item, value, by_email: me(), updated_at: new Date().toISOString() })
@@ -430,7 +439,7 @@ function render(enter) {
   renderTop(r); renderTabbar(r);
   const v = $('#view'), y = scrollY;
   let html;
-  if (r.mode === 'manager') html = r.page === 'finance' ? pageFinance() : r.page === 'onboarding' ? pageOnboarding() : pageTasks();
+  if (r.mode === 'manager') html = r.page === 'finance' ? pageFinance() : r.page === 'onboarding' ? pageOnboarding() : r.page === 'videos' ? pageVideos() : pageTasks();
   else if (r.mode === 'needed') html = pageNeeded();
   else html = pagePortal(portal(r.pid));
   v.innerHTML = `<div class="${enter ? 'enter' : ''}">${html}</div>`;
@@ -459,12 +468,12 @@ function renderTabbar(r) {
   const tb = $('#tabbar');
   if (!S.admin) { tb.innerHTML = ''; return; }
   const cur = r.mode === 'portal' ? 'portal' : r.mode === 'needed' ? 'needed' : r.page, unread = totalUnread(), needed = neededItems().count;
-  tb.innerHTML = [['tasks', 'Tasks', I.tasks, '#/tasks'], ['finance', 'Finance', I.money, '#/finance'], ['onboarding', 'Onboarding', I.rocket, '#/onboarding'], ['needed', 'For me', I.inbox, '#/needed'], ['portal', 'Portals', I.grid, '#/portal/' + lastPortalId()]]
+  tb.innerHTML = [['tasks', 'Tasks', I.tasks, '#/tasks'], ['videos', 'Videos', I.play, '#/videos'], ['finance', 'Finance', I.money, '#/finance'], ['onboarding', 'Onboard', I.rocket, '#/onboarding'], ['needed', 'For me', I.inbox, '#/needed'], ['portal', 'Portals', I.grid, '#/portal/' + lastPortalId()]]
     .map(([k, label, ic, h]) => `<button data-act="go" data-v="${h}" class="${cur === k ? 'on' : ''}">${ic}<span>${label}</span>${k === 'portal' && unread ? `<span class="badge">${unread}</span>` : ''}${k === 'needed' && needed ? `<span class="badge">${needed}</span>` : ''}</button>`).join('') + '<i class="lens"></i>';
   tb.dataset.seg = 'tabbar';
 }
 function managerNav(page) {
-  return `<div class="subnav hide-m">${seg('mgr', [['tasks', 'Tasks'], ['finance', 'Finance'], ['onboarding', 'Onboarding & automations']], page, 'go-page')}</div>`;
+  return `<div class="subnav hide-m">${seg('mgr', [['tasks', 'Tasks'], ['videos', 'Videos'], ['finance', 'Finance'], ['onboarding', 'Onboarding & automations']], page, 'go-page')}</div>`;
 }
 
 /* ---------- TASKS ---------- */
@@ -812,7 +821,8 @@ function automationsCard(p) {
       ['Client approvals → tasks', 'When a client approves or asks for changes, the task shows it straight away.'],
       ['Finance ⇄ portal payments', 'Mark a payment paid here and the client’s plan updates.'],
       ['New portal → Manager', 'Any new portal (including from onboard-client) joins Tasks and starts onboarding.'],
-      ['Portal → onboarding ticks', 'Drive link, call booked, access given, form ticked and payment paid are detected automatically.']]
+      ['Portal → onboarding ticks', 'Drive link, call booked, access given, form ticked and payment paid are detected automatically.'],
+      ['Videos ⇄ Needed from me', 'Moving an episode adds or ticks off the matching item. Ticking the item moves the episode. Client sign-off happens in their portal.']]
       .map(([t, d]) => `<div class="ar"><span class="auto-ic live">${I.link}</span><div class="t"><b>${t}</b><p>${d}</p></div></div>`).join('')}
   </aside>`;
 }
@@ -825,7 +835,8 @@ function neededItems() {
   const changes = D.tasks.filter(t => !t.done && t.deliverable && t.approval && aprState(t.portal_id, t.id) === 'changes');
   const late = allPayments().filter(x => !x.pm.paid && x.pm.date && x.pm.date < today);
   const unread = D.portals.filter(p => unreadFor(p.id));
-  return { mine, changes, late, unread, count: mine.length + changes.length + late.length };
+  const videos = S.admin ? vtNeeds() : [];
+  return { mine, changes, late, unread, videos, count: mine.length + changes.length + late.length + videos.length };
 }
 // red badges everywhere: tab title and the home-screen app icon too
 function updateBadges() {
@@ -837,7 +848,9 @@ function updateBadges() {
 const INBOX_ST = { approved: '<span class="chip green">Approved</span>', changes: '<span class="chip orange">Changes requested</span>', done: '<span class="chip green">Done</span>' };
 function inboxRow(x) {
   const p = x.portal_id && portal(x.portal_id), done = x.status !== 'pending', apr = x.kind === 'approval';
+  const ep = vtInboxEpisode(x);
   const meta = [p ? `<span class="chip"><span class="dot" style="--c:${pColor(p)}"></span>${esc(p.name)}</span>` : '', done ? INBOX_ST[x.status] : dueChip(x.due, false, 'By '),
+    ep ? `<button class="chip" data-act="vtOpen" data-id="${ep.id}" title="Open the episode">${I.play}Ep ${ep.number} · ${esc(vtStage(ep).short)}</button>` : '',
     x.source && x.source !== 'manual' ? `<span class="chip violet">${I.bolt}${esc(x.source)}</span>` : '', done && x.response ? `<span class="chip">${I.chat}Note</span>` : ''].join('');
   return `<div class="need ${!done && apr ? 'ask' : ''} ${done ? 'done' : ''}">
     ${apr && !done ? '<span class="pulse"></span>' : `<button class="chk ${done ? 'on' : ''}" data-act="inboxDo" data-id="${x.id}" data-v="${done ? 'pending' : 'done'}" aria-label="${done ? 'Reopen' : 'Mark done'}">${I.check}</button>`}
@@ -856,7 +869,7 @@ function pageNeeded() {
     <div class="acts"><button class="btn primary" data-act="inbox">${I.plus}Add</button></div></div>
   <div class="pgrid">
     <section class="card s7"><div class="card-head"><div><h3>${I.inbox}Waiting on you${pend.length ? `<span class="badge">${pend.length}</span>` : ''}</h3><div class="sub">Things to approve or do yourself</div></div><button class="ib sm" data-act="inbox" title="Add" aria-label="Add">${I.plus}</button></div>
-      ${pend.map(inboxRow).join('') || empty('All clear', 'Nothing needs you right now.')}
+      ${pend.map(inboxRow).join('')}${n.videos.map(vtNeedRow).join('')}${pend.length + n.videos.length ? '' : empty('All clear', 'Nothing needs you right now.')}
       <form class="qadd" data-form="inboxQuick"><input name="t" placeholder="Add something that needs your approval…" autocomplete="off" enterkeyhint="done" aria-label="New item"><button class="ib sm" aria-label="Add">${I.plus}</button></form></section>
     <section class="card s5"><div class="card-head"><div><h3>${I.users}From clients${n.changes.length + n.late.length ? `<span class="badge">${n.changes.length + n.late.length}</span>` : ''}</h3><div class="sub">Change requests, late payments and messages</div></div></div>
       ${n.changes.map(t => { const p = portal(t.portal_id), last = commentsFor(t.portal_id, t.id).filter(c => c.author_email !== me()).pop(); return `<div class="need chg"><span style="font-size:17px;line-height:1.4;width:24px;text-align:center">✏️</span>
@@ -898,6 +911,7 @@ async function setInbox(x, patch, msg) {
   const { error } = await sb.from('hub_inbox').update(patch).eq('id', x.id);
   if (error) { Object.assign(x, prev); render(false); return toast('Couldn’t save: ' + error.message); }
   if (msg) toast(msg, 'status' in patch && patch.status !== 'pending' ? () => setInbox(x, { status: 'pending' }) : null);
+  if ('status' in patch && prev.status !== patch.status) vtOnInbox(x, patch.status);
 }
 async function addInbox(row) {
   const x = { id: uid(10), notes: '', link: '', portal_id: null, due: null, kind: 'approval', status: 'pending', response: '', source: 'manual', created_at: new Date().toISOString(), resolved_at: null, ...row };
@@ -997,7 +1011,7 @@ function pagePortal(p) {
         ${b.payLink ? `<a class="btn primary sm" style="margin-top:10px" href="${esc(safeUrl(b.payLink))}" target="_blank" rel="noopener">Pay now ${I.ext}</a>` : ''}</div>
     </div></section>
 
-  ${admin ? `<section class="card s6"><div class="card-head"><div><h3>${I.users}Access</h3><div class="sub">Who can sign in to this portal</div></div></div>
+  ${admin ? `${vtPortalCard(p)}<section class="card s6"><div class="card-head"><div><h3>${I.users}Access</h3><div class="sub">Who can sign in to this portal</div></div></div>
     ${(D.access[p.id] || []).map(e => `<div class="person"><span class="av sm" style="--c:${colorFor(e)};border-radius:50%">${esc(e[0].toUpperCase())}</span><div class="e">${esc(e)}</div><button class="ib sm" data-act="delAccess" data-pid="${p.id}" data-v="${esc(e)}" aria-label="Remove access">${I.x}</button></div>`).join('') || '<div class="empty">Nobody has access yet.</div>'}
     <form class="qadd" data-form="access" data-pid="${p.id}"><input name="e" type="email" placeholder="client@company.com" autocomplete="off" aria-label="Email to give access"><button class="btn sm primary">Give access</button></form>
     <p class="muted" style="font-size:12.5px;margin:10px 4px 0">They sign in (or create an account) with this exact email and only ever see this portal.</p></section>
@@ -1393,6 +1407,351 @@ const dock = {
   panel.addEventListener('drop', e => { e.preventDefault(); depth = 0; panel.classList.remove('drag'); dock.upload(e.dataTransfer.files[0]); });
 })();
 
+/* ---------- VIDEOS (episode pipeline) ----------
+   Every client video episode and the stage it is at, manager side only. Lives in vt_episodes / vt_activity
+   (see video-tracker-supabase.sql). Episodes belong to portals. The Super Client Video skill moves episodes
+   with vt_set_stage(); the hub picks that up live. Moves made here chain into Needed from me (hub_inbox) and,
+   for client sign-off, into a deliverable the client approves in their portal. */
+const VT_STAGES = [
+  { id: 'scripted',          label: 'Scripted',                    short: 'Scripted',       who: 'me',     next: 'Approve the script',       inbox: { kind: 'todo', title: (c, n) => `Approve ${c} ep ${n} script` } },
+  { id: 'script_approved',   label: 'Script approved',             short: 'Script OK',      who: 'me',     next: 'Send it to the client' },
+  { id: 'sent_to_client',    label: 'Waiting for footage',         short: 'Footage',        who: 'client', next: 'Client is recording' },
+  { id: 'footage_uploaded',  label: 'Footage uploaded',            short: 'Footage in',     who: 'me',     next: 'Start the edit',           inbox: { kind: 'todo', title: (c, n) => `Edit ${c} ep ${n}` } },
+  { id: 'editing',           label: 'Editing',                     short: 'Editing',        who: 'none',   next: 'Edit in progress' },
+  { id: 'waiting_approval',  label: 'Ready for my review',         short: 'My review',      who: 'me',     next: 'Review the video',         inbox: { kind: 'approval', title: (c, n) => `Review ${c} episode ${n}` } },
+  { id: 'client_approval',   label: 'Waiting for client approval', short: 'Client sign-off',who: 'client', next: 'Client is reviewing' },
+  { id: 'approved',          label: 'Approved',                    short: 'Approved',       who: 'me',     next: 'Record the feedback video', inbox: { kind: 'todo', title: (c, n) => `Record feedback video for ${c} ep ${n}` } },
+  { id: 'feedback_recorded', label: 'Feedback video recorded',     short: 'Done',           who: 'none',   next: 'Done' },
+];
+const VT_IDX = Object.fromEntries(VT_STAGES.map((s, i) => [s.id, i]));
+const VT_FINAL = 'feedback_recorded';
+// Inbox titles the skill writes that mean "this episode is stuck on something"
+const VT_ATTN = /^(attention:|fix send for|chase |answer (script|edit) question for|wake your mac for|check .* video|need from you:)/i;
+const vtIsStage = s => typeof s === 'string' && Object.prototype.hasOwnProperty.call(VT_IDX, s);
+const vtEp = id => D.episodes.find(e => e.id === id);
+const vtStage = ep => VT_STAGES[VT_IDX[ep.stage]] || VT_STAGES[0];
+const vtColor = id => `var(--vt${(VT_IDX[id] ?? 0) + 1})`;
+const vtName = ep => `${portal(ep.portal_id)?.name || 'Client'} · Ep ${ep.number}`;
+const vtDaysSince = iso => iso ? Math.max(0, Math.round((parseD(todayKey()) - parseD(ymd(new Date(iso)))) / 864e5)) : 0;
+const vtEnteredAt = ep => { const h = ep.history || []; for (let i = h.length - 1; i >= 0; i--) if (h[i].stage === ep.stage) return h[i].at; return ep.created_at; };
+const vtLastChange = ep => [vtEnteredAt(ep), ep.blocked?.at, ep.created_at].filter(Boolean).sort().pop();
+const vtFmt = iso => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+function vtSorted(list) { return [...list].sort((a, b) => (a.portal_id !== b.portal_id ? (portal(a.portal_id)?.name || '').localeCompare(portal(b.portal_id)?.name || '') : b.number - a.number)); }
+
+/* inbox ↔ episode: the skill's items are "<verb> <Client> ep <N> …"; match on portal + episode number */
+function vtInboxEpisode(x) {
+  if (!x) return null;
+  const m = (x.title || '').match(/\b(?:ep|episode)\.?\s*(\d+)\b/i); if (!m) return null;
+  const n = +m[1], t = x.title.toLowerCase();
+  let pid = x.portal_id;
+  if (!pid) { const p = sortedPortals().find(p => t.includes(p.name.toLowerCase())); pid = p?.id; }
+  if (!pid) return null;
+  return D.episodes.find(e => e.portal_id === pid && e.number === n) || null;
+}
+const vtItemsFor = ep => D.inbox.filter(x => x.status === 'pending' && vtInboxEpisode(x)?.id === ep.id);
+function vtBlocked(ep) {
+  if (ep.blocked?.reason) return { reason: ep.blocked.reason, at: ep.blocked.at, src: 'flag' };
+  const x = vtItemsFor(ep).find(i => VT_ATTN.test(i.title));
+  return x ? { reason: x.notes?.trim() ? x.notes.trim().split('\n')[0] : x.title, at: x.created_at, src: 'inbox', item: x } : null;
+}
+/* episodes waiting on Stan with no item in Needed from me yet: shown there so nothing is missed */
+function vtNeeds() {
+  return D.episodes.filter(ep => ep.stage !== VT_FINAL && vtStage(ep).who === 'me' && !vtItemsFor(ep).length)
+    .map(ep => ({ ep, action: vtStage(ep).next, since: vtLastChange(ep) }))
+    .sort((a, b) => (a.since || '').localeCompare(b.since || ''));
+}
+const vtNextOf = ep => VT_STAGES[VT_IDX[ep.stage] + 1] || null;
+function vtDue(ep) {
+  if (!ep.due) return '';
+  const n = daysFrom(ep.due), done = ep.stage === VT_FINAL, cls = done ? '' : n < 0 ? 'red' : n <= 2 ? 'orange' : '';
+  return `<span class="chip ${cls}">${I.clock}${n < 0 ? `${-n}d overdue` : n === 0 ? 'Due today' : n === 1 ? 'Due tomorrow' : n <= 6 ? `Due in ${n}d` : 'Due ' + fmtD(ep.due)}</span>`;
+}
+const vtStageChip = ep => `<span class="vt-chip" style="--c:${vtColor(ep.stage)}"><span class="dot" style="--c:${vtColor(ep.stage)}"></span>${esc(vtStage(ep).label)}</span>`;
+
+/* ---------- writes ---------- */
+const vtSaveT = {};
+async function vtLog(entry) {
+  const row = { id: 'a' + uid(10), at: new Date().toISOString(), type: 'note', episode_id: null, portal_id: null, from_stage: null, to_stage: null, via: 'hub', text: '', ...entry };
+  D.vact.unshift(row);
+  const { error } = await sb.from('vt_activity').insert(row);
+  if (error) console.warn('activity', error.message);
+}
+async function vtUpdate(ep, patch, log) {
+  Object.assign(ep, patch, { updated_at: new Date().toISOString() });
+  vtSaveT[ep.id] = (vtSaveT[ep.id] || 0) + 1;
+  const { error } = await sb.from('vt_episodes').update({ ...patch, updated_at: ep.updated_at }).eq('id', ep.id);
+  if (!--vtSaveT[ep.id]) delete vtSaveT[ep.id];
+  if (error) toast('Couldn’t save: ' + error.message);
+  else if (log) vtLog({ episode_id: ep.id, portal_id: ep.portal_id, ...log });
+  return !error;
+}
+async function vtSetStage(ep, stage, via = 'hub') {
+  if (!vtIsStage(stage) || ep.stage === stage) return false;
+  const from = ep.stage, back = VT_IDX[stage] < VT_IDX[from], at = new Date().toISOString();
+  const history = [...(ep.history || []), { stage, at, via, ...(back ? { back: true } : {}) }];
+  const ok = await vtUpdate(ep, { stage, history }, { type: 'stage', from_stage: from, to_stage: stage, via });
+  if (ok) vtChain(ep, from, stage);     // idempotent: resolves only pending items, never adds a duplicate
+  return ok;
+}
+async function vtCreate({ portal_id, number, title = '', stage = 'scripted', due = null, notes = '' }) {
+  const at = new Date().toISOString();
+  const ep = { id: 'ep' + uid(10), portal_id, number, title, stage, history: [{ stage, at, via: 'hub' }], notes, links: {}, blocked: null, due, task_id: null, created_at: at, updated_at: at };
+  D.episodes.push(ep);
+  const { error } = await sb.from('vt_episodes').insert(ep);
+  if (error) { D.episodes = D.episodes.filter(x => x !== ep); toast('Couldn’t add: ' + error.message); return null; }
+  vtLog({ type: 'added', episode_id: ep.id, portal_id, to_stage: stage });
+  vtChain(ep, null, stage);
+  return ep;
+}
+async function vtDelete(ep) {
+  D.episodes = D.episodes.filter(x => x !== ep); closeSheet(); render(false);
+  const { error } = await sb.from('vt_episodes').delete().eq('id', ep.id);
+  if (error) { D.episodes.push(ep); render(false); return toast('Couldn’t delete: ' + error.message); }
+  vtLog({ type: 'deleted', episode_id: ep.id, portal_id: ep.portal_id, text: `Ep ${ep.number}` });
+  toast(`${vtName(ep)} deleted`, async () => { const { created_at, updated_at, ...row } = ep; const r = await sb.from('vt_episodes').insert({ ...row, created_at, updated_at }); if (!r.error && !vtEp(ep.id)) { D.episodes.push(ep); render(false); } });
+}
+
+/* ---------- chaining: a move here creates / clears the matching Needed from me item ---------- */
+function vtFind(ep, re) { return vtItemsFor(ep).find(x => re.test(x.title)); }
+function vtEnsureInbox(ep, def) {
+  const p = portal(ep.portal_id); if (!p || !def) return;
+  const title = def.title(p.name, ep.number);
+  const key = title.toLowerCase().replace(/\s+/g, ' ');
+  const dupe = D.inbox.find(x => x.status === 'pending' && x.title.toLowerCase().replace(/\s+/g, ' ').startsWith(key.split(' ').slice(0, 2).join(' ')) && vtInboxEpisode(x)?.id === ep.id);
+  if (dupe) return;
+  addInbox({ title, kind: def.kind, portal_id: ep.portal_id, due: ep.due || null, link: ep.links?.video || ep.links?.notion || '', notes: '', source: 'videos' });
+}
+function vtResolve(ep, re, status) { const x = vtFind(ep, re); if (x) setInbox(x, { status }); }
+function vtChain(ep, from, to) {
+  const s = VT_STAGES[VT_IDX[to]];
+  if (from === 'scripted' && VT_IDX[to] > VT_IDX.scripted) vtResolve(ep, /approve .*script/i, 'done');
+  if (['footage_uploaded', 'editing'].includes(from) && VT_IDX[to] > VT_IDX.editing) vtResolve(ep, /^edit /i, 'done');
+  if (from === 'waiting_approval' && VT_IDX[to] > VT_IDX.waiting_approval) vtResolve(ep, /^review /i, 'approved');
+  if (from === 'approved' && to === VT_FINAL) vtResolve(ep, /^record feedback video/i, 'done');
+  if (s.inbox) vtEnsureInbox(ep, s.inbox);
+  if (to === 'client_approval') vtEnsureApprovalTask(ep);
+  if (to === 'approved' || to === VT_FINAL) { const t = ep.task_id && task(ep.task_id); if (t && !t.done) setTaskDone(t, true); }
+}
+/* the client signs off in their portal through a normal deliverable with "Ask them to approve it" on */
+async function vtEnsureApprovalTask(ep) {
+  const p = portal(ep.portal_id); if (!p) return;
+  let t = ep.task_id && task(ep.task_id);
+  if (!t && vtEnsureApprovalTask.busy?.[ep.id]) return;
+  if (!t) {
+    (vtEnsureApprovalTask.busy ||= {})[ep.id] = true;
+    t = await createTask({ portal_id: ep.portal_id, title: `Episode ${ep.number} video${ep.title ? ` · ${ep.title}` : ''}`, notes: ep.links?.video ? `Watch it here: ${ep.links.video}\n\nApprove it, or tell us what to change.` : 'Approve it, or tell us what to change.',
+      due: ep.due || null, priority: 'high', deliverable: true, approval: true, review_by: ep.due || addDays(todayKey(), 3) });
+    delete vtEnsureApprovalTask.busy[ep.id];
+    if (!t) return;
+    vtUpdate(ep, { task_id: t.id });
+  } else if (aprState(ep.portal_id, t.id) !== 'pending') setMark(ep.portal_id, t.id, null);   // sent back for another look
+  toast(`${p.name} can now approve episode ${ep.number} in their portal`);
+}
+/* an item ticked off in Needed from me moves the episode on */
+function vtOnInbox(x, status) {
+  const ep = vtInboxEpisode(x); if (!ep || status === 'pending') return;
+  const t = x.title.toLowerCase();
+  if (/approve .*script/.test(t) && ep.stage === 'scripted') return vtSetStage(ep, 'script_approved', 'hub-inbox');
+  if (/^edit /.test(t) && ['footage_uploaded', 'editing'].includes(ep.stage)) return vtSetStage(ep, 'waiting_approval', 'hub-inbox');
+  if (/^review /.test(t) && ep.stage === 'waiting_approval') {
+    if (status === 'approved') vtSetStage(ep, 'client_approval', 'hub-inbox');
+    else if (status === 'changes') vtUpdate(ep, { blocked: { reason: 'Changes needed on the video' + (x.response ? ': ' + x.response : ''), at: new Date().toISOString() } }, { type: 'blocked', text: 'changes requested' });
+    return;
+  }
+  if (/^record feedback video/.test(t) && ep.stage === 'approved') return vtSetStage(ep, VT_FINAL, 'hub-inbox');
+}
+/* the client approved (or asked for changes on) the linked deliverable */
+function vtOnMark(pid, itemId, value) {
+  const ep = D.episodes.find(e => e.portal_id === pid && e.task_id === itemId); if (!ep) return;
+  if (value === 'approved' && ep.stage === 'client_approval') { vtSetStage(ep, 'approved', 'client').then(() => { if (ep.blocked) vtUpdate(ep, { blocked: null }, { type: 'unblocked', via: 'client' }); }); }
+  else if (value === 'changes' && !ep.blocked) vtUpdate(ep, { blocked: { reason: `${portal(pid)?.name || 'Client'} asked for changes`, at: new Date().toISOString() } }, { type: 'blocked', via: 'client', text: 'client asked for changes' });
+}
+/* a derived "Needed from me" row ticked: take the obvious next step */
+function vtAdvance(ep) {
+  const nxt = { scripted: 'script_approved', footage_uploaded: 'editing', waiting_approval: 'client_approval', approved: VT_FINAL }[ep.stage];
+  if (nxt) vtSetStage(ep, nxt, 'hub');
+}
+
+/* ---------- page ---------- */
+const vtMatch = ep => (S.vtClient === 'all' || ep.portal_id === S.vtClient) && (!S.vtQ || `${portal(ep.portal_id)?.name || ''} ep ${ep.number} ${ep.title || ''} ${ep.notes || ''} ${vtStage(ep).label}`.toLowerCase().includes(S.vtQ));
+function pageVideos() {
+  const all = D.episodes.filter(vtMatch), open = all.filter(e => e.stage !== VT_FINAL);
+  const onClients = open.filter(e => vtStage(e).who === 'client' && !vtBlocked(e)).length;
+  const onMe = open.filter(e => vtStage(e).who === 'me' || vtBlocked(e)).length;
+  const wk = addDays(todayKey(), -7);
+  const delivered = all.filter(e => VT_IDX[e.stage] >= VT_IDX.approved && (e.history || []).some(h => h.stage === 'approved' && !h.back && ymd(new Date(h.at)) >= wk)).length;
+  const ps = sortedPortals();
+  return `${managerNav('videos')}
+  <div class="page-head"><div><div class="eyebrow">${new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</div><h1>Videos</h1>
+    <div class="sub">Every episode and the stage it’s at. Moves here update Needed from me; the skill updates this.</div></div>
+    <div class="acts"><button class="btn primary" data-act="vtNew">${I.plus}Episode</button></div></div>
+  <div class="stats">
+    <div class="card stat"><div class="k">${I.play}In progress</div><div class="v">${open.length}</div><div class="s">${all.length} episodes in total</div></div>
+    <div class="card stat"><div class="k">${I.users}Waiting on clients</div><div class="v">${onClients}</div><div class="s">Footage or sign-off</div></div>
+    <div class="card stat ${onMe ? 'alert' : ''}"><div class="k">${I.flag}Waiting on me</div><div class="v">${onMe}</div><div class="s">${open.filter(vtBlocked).length ? `${open.filter(vtBlocked).length} blocked` : 'Nothing blocked'}</div></div>
+    <div class="card stat"><div class="k">${I.check}Delivered this week</div><div class="v">${delivered}</div><div class="s">Approved in the last 7 days</div></div>
+  </div>
+  <div class="toolbar">${seg('vtview', [['board', 'Board'], ['clients', 'By client']], S.vtView, 'vtView')}
+    <div class="chips grow"><button class="fchip ${S.vtClient === 'all' ? 'on' : ''}" data-act="vtClient" data-v="all">All clients</button>${ps.map(p => `<button class="fchip ${S.vtClient === p.id ? 'on' : ''}" data-act="vtClient" data-v="${p.id}">${av(p, 'sm')}${esc(p.name)}</button>`).join('')}</div>
+    <label class="search">${I.search}<input type="search" placeholder="Search episodes" value="${esc(S.vtQ)}" data-in="vtq" aria-label="Search episodes"></label></div>
+  <div id="vtbody">${vtBody()}</div>
+  <div class="pgrid" style="margin-top:16px">${vtNeedsCard()}${vtActivityCard()}</div>`;
+}
+function vtBody() {
+  if (!D.portals.length) return `<div class="card">${empty('No clients yet', 'Add a client first, then their episodes.')}</div>`;
+  const items = D.episodes.filter(vtMatch);
+  if (S.vtView === 'clients') return `<div class="cgrid">${sortedPortals().filter(p => S.vtClient === 'all' || p.id === S.vtClient).map(p => vtClientCard(p, items.filter(e => e.portal_id === p.id))).join('')}</div>`;
+  return `<div class="vt-board">${VT_STAGES.map(s => {
+    const eps = items.filter(e => e.stage === s.id).sort((a, b) => (vtEnteredAt(a) || '').localeCompare(vtEnteredAt(b) || ''));
+    return `<section class="vt-col ${eps.length ? '' : 'empty'}" data-stage="${s.id}" aria-label="${esc(s.label)}">
+      <h4><span class="dot" style="--c:${vtColor(s.id)}"></span>${esc(s.label)}<span class="n">${eps.length}</span></h4>
+      ${eps.map(vtCard).join('')}<div class="hint">Drop here</div></section>`; }).join('')}</div>`;
+}
+function vtCard(ep) {
+  const p = portal(ep.portal_id), d = vtDaysSince(vtEnteredAt(ep)), b = vtBlocked(ep), pct = Math.round(VT_IDX[ep.stage] / (VT_STAGES.length - 1) * 100);
+  return `<article class="vt-card ${b ? 'blocked' : ''}" draggable="true" data-id="${ep.id}" style="--c:${vtColor(ep.stage)}">
+    <div class="cl">${esc(p?.name || 'Client')}</div>
+    <button class="ep" data-act="vtOpen" data-id="${ep.id}">Ep ${ep.number}${ep.title ? `<small>${esc(ep.title)}</small>` : ''}</button>
+    <div class="meta"><span>${d === 0 ? 'Moved today' : `${d}d in stage`}</span>${vtDue(ep)}${b ? `<span class="chip orange" title="${esc(b.reason)}">${I.flag}Blocked</span>` : ''}</div>
+    <button class="ib sm" data-act="vtMenu" data-id="${ep.id}" title="Move to…" aria-label="Move ${esc(vtName(ep))}">${I.more}</button>
+    <div class="bar"><b style="width:${pct}%"></b></div></article>`;
+}
+function vtClientCard(p, eps) {
+  const c = pColor(p), counts = VT_STAGES.map(s => eps.filter(e => e.stage === s.id).length), open = eps.filter(e => e.stage !== VT_FINAL).length;
+  const wk = addDays(todayKey(), -30), delivered = eps.filter(e => (e.history || []).some(h => h.stage === 'approved' && !h.back && ymd(new Date(h.at)) >= wk)).length;
+  const blocked = eps.filter(vtBlocked).length, late = eps.filter(e => e.due && e.due < todayKey() && e.stage !== VT_FINAL).length;
+  return `<section class="card ccard lift" style="--c:${c}">
+    <header>${av(p)}<div class="nm"><b>${esc(p.name)}</b><small>${open} in flight · ${delivered} delivered in 30 days${blocked ? ` · <span style="color:var(--warn)">${blocked} blocked</span>` : ''}${late ? ` · <span style="color:var(--bad)">${late} overdue</span>` : ''}</small></div>
+      <button class="ib sm" data-act="go" data-v="#/portal/${p.id}" title="Open their portal" aria-label="Open portal">${I.grid}</button></header>
+    <div class="vt-pipe" title="${VT_STAGES.map((s, k) => `${s.label}: ${counts[k]}`).join('\n')}">${VT_STAGES.map((s, k) => `<span class="${counts[k] ? 'has' : ''}" style="--c:${vtColor(s.id)}">${counts[k] ? `<b>${counts[k]}</b>` : ''}</span>`).join('')}</div>
+    <div>${vtSorted(eps).map(ep => `<div class="trow"><span class="dot" style="--c:${vtBlocked(ep) ? 'var(--vtblk)' : vtColor(ep.stage)};margin-top:8px"></span>
+      <div class="tmain" data-act="vtOpen" data-id="${ep.id}"><div class="ttl">Ep ${ep.number}${ep.title ? ` · ${esc(ep.title)}` : ''}</div><div class="tmeta">${vtStageChip(ep)}${vtDue(ep)}${vtBlocked(ep) ? '<span class="chip orange">Blocked</span>' : ''}</div></div>
+      <span class="muted" style="font-size:12.5px;white-space:nowrap;margin-top:8px">${vtDaysSince(vtEnteredAt(ep))}d</span></div>`).join('') || `<div class="empty">No episodes yet</div>`}</div>
+    <form class="qadd" data-form="vtQuick" data-pid="${p.id}"><input name="t" placeholder="New episode… (number, then title)" autocomplete="off" enterkeyhint="done" aria-label="New episode for ${esc(p.name)}"><button class="ib sm" aria-label="Add">${I.plus}</button></form>
+  </section>`;
+}
+function vtNeedRow({ ep, action, since }) {
+  const p = portal(ep.portal_id), d = vtDaysSince(since);
+  return `<div class="need vt-need"><button class="chk go" data-act="vtAdvance" data-id="${ep.id}" title="${esc(action)}" aria-label="${esc(action)}">${I.right}</button>
+    <div class="t" data-act="vtOpen" data-id="${ep.id}"><div class="ttl">${esc(action)}</div><div class="tmeta">${p ? `<span class="chip"><span class="dot" style="--c:${pColor(p)}"></span>${esc(p.name)}</span>` : ''}<span class="chip">${I.play}Ep ${ep.number}</span>${vtStageChip(ep)}${vtDue(ep)}<span class="chip">${d === 0 ? 'today' : `${d}d`}</span></div></div></div>`;
+}
+function vtNeedsCard() {
+  const linked = D.inbox.filter(x => x.status === 'pending' && vtInboxEpisode(x)).sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999') || a.created_at.localeCompare(b.created_at));
+  const derived = vtNeeds();
+  return `<section class="card s7"><div class="card-head"><div><h3>${I.inbox}Needs my attention${linked.length + derived.length ? `<span class="badge">${linked.length + derived.length}</span>` : ''}</h3><div class="sub">The same items as Needed from me, filtered to videos</div></div><button class="btn sm ghost" data-act="go" data-v="#/needed">All</button></div>
+    ${linked.map(inboxRow).join('')}${derived.map(vtNeedRow).join('')}${linked.length + derived.length ? '' : empty('Nothing waiting on you', 'Episodes with clients or in the edit don’t count.')}</section>`;
+}
+function vtActLine(a) {
+  const ep = a.episode_id && vtEp(a.episode_id), p = a.portal_id && portal(a.portal_id);
+  const who = ep && p ? `<b>${esc(p.name)} · Ep ${ep.number}</b>` : p ? `<b>${esc(p.name)}</b>` : '<b>An episode</b>';
+  const st = id => vtIsStage(id) ? VT_STAGES[VT_IDX[id]].label : '';
+  const text = { stage: `${who} moved to ${esc(st(a.to_stage))}`, added: `${who} added${a.to_stage && a.to_stage !== 'scripted' ? ` at ${esc(st(a.to_stage))}` : ''}`, blocked: `${who} blocked: ${esc(a.text)}`, unblocked: `${who} flag cleared`, due: `${who} ${esc(a.text)}`, deleted: `${p ? `<b>${esc(p.name)} · ${esc(a.text)}</b>` : who} deleted` }[a.type] || `${who} ${esc(a.text || a.type)}`;
+  const via = a.via && !/^hub/.test(a.via) ? `<span class="chip violet">${I.bolt}${esc(a.via === 'client' ? 'client' : a.via)}</span>` : '';
+  const d = new Date(a.at), mins = Math.round((Date.now() - d) / 60000);
+  const when = mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.round(mins / 60)}h ago` : relLabel(ymd(d));
+  return `<div class="vt-act"><span class="dot" style="--c:${a.to_stage ? vtColor(a.to_stage) : a.type === 'blocked' ? 'var(--vtblk)' : 'var(--muted)'}"></span><span>${text} ${via}</span><time title="${esc(vtFmt(a.at))}">${when}</time></div>`;
+}
+function vtActivityCard() {
+  const list = [...D.vact].sort((a, b) => b.at.localeCompare(a.at)), shown = S.vtActAll ? list.slice(0, 80) : list.slice(0, 10);
+  return `<section class="card s5"><div class="card-head"><div><h3>${I.clock}Activity</h3><div class="sub">Moves, flags and what the skill did</div></div></div>
+    ${shown.map(vtActLine).join('') || '<div class="empty">Nothing yet.</div>'}
+    ${list.length > 10 ? `<button class="more ${S.vtActAll ? 'open' : ''}" data-act="vtActAll">${I.right}${S.vtActAll ? 'Show less' : `All ${Math.min(list.length, 80)}`}</button>` : ''}</section>`;
+}
+/* admin-only card on a client's portal page: their pipeline at a glance (clients never see this) */
+function vtPortalCard(p) {
+  const eps = vtSorted(D.episodes.filter(e => e.portal_id === p.id));
+  return `<section class="card s12"><div class="card-head"><div><h3>${I.play}Videos</h3><div class="sub">Only you see this. The client sees finished videos as deliverables.</div></div>
+      <div style="display:flex;gap:6px"><button class="btn sm" data-act="go" data-v="#/videos">Board</button><button class="ib sm" data-act="vtNew" data-pid="${p.id}" title="New episode" aria-label="New episode">${I.plus}</button></div></div>
+    ${eps.length ? `<div class="vt-pipe" style="margin-top:4px">${VT_STAGES.map(s => { const n = eps.filter(e => e.stage === s.id).length; return `<span class="${n ? 'has' : ''}" style="--c:${vtColor(s.id)}">${n ? `<b>${n}</b>` : ''}</span>`; }).join('')}</div>
+    ${eps.slice(0, 6).map(ep => `<div class="trow"><span class="dot" style="--c:${vtColor(ep.stage)};margin-top:8px"></span><div class="tmain" data-act="vtOpen" data-id="${ep.id}"><div class="ttl">Ep ${ep.number}${ep.title ? ` · ${esc(ep.title)}` : ''}</div><div class="tmeta">${vtStageChip(ep)}${vtDue(ep)}${vtBlocked(ep) ? '<span class="chip orange">Blocked</span>' : ''}</div></div>
+      <span class="muted" style="font-size:12.5px;margin-top:8px">${esc(vtStage(ep).next)}</span></div>`).join('')}${eps.length > 6 ? `<button class="more" data-act="go" data-v="#/videos">${I.right}All ${eps.length} on the board</button>` : ''}`
+    : `<div class="empty">No episodes yet. Add one, or run <b>/super-client-video ${esc(p.name)}</b>.</div>`}</section>`;
+}
+
+/* ---------- episode sheet ---------- */
+function openEpisode(id) {
+  const ep = vtEp(id); if (!ep) return;
+  openSheet('vtep', { id }, () => vtSheetHTML(id), { onClose: () => { const e = vtEp(id); if (e) flushEpForm(e); } });
+}
+function vtSheetHTML(id) {
+  const ep = vtEp(id); if (!ep) return '';
+  const p = portal(ep.portal_id), s = vtStage(ep), i = VT_IDX[ep.stage], nxt = vtNextOf(ep), prv = VT_STAGES[i - 1], b = vtBlocked(ep), items = vtItemsFor(ep), t = ep.task_id && task(ep.task_id);
+  const last = sid => { const h = ep.history || []; let any = null; for (let k = h.length - 1; k >= 0; k--) { if (h[k].stage !== sid) continue; if (!h[k].back) return h[k]; any ||= h[k]; } return any; };
+  return `<div class="sh-head"><h2><span class="k">${esc(p?.name || 'Client')} · Episode ${ep.number}</span>${esc(ep.title || `Episode ${ep.number}`)}</h2>
+      ${p ? `<button class="ib" data-act="goPortal" data-id="${p.id}" title="Open their portal">${I.grid}</button>` : ''}<button class="ib" data-act="close" aria-label="Close">${I.x}</button></div>
+    <div class="sh-body">
+      <div class="vt-stagebox" style="--c:${vtColor(ep.stage)}"><span class="dot" style="--c:${vtColor(ep.stage)};width:10px;height:10px;box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 25%,transparent)"></span>
+        <select data-chg="vtStage" data-id="${ep.id}" aria-label="Stage">${VT_STAGES.map(x => `<option value="${x.id}" ${x.id === ep.stage ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}</select>
+        <span class="nx">${vtDaysSince(vtEnteredAt(ep)) === 0 ? 'Moved today' : `${vtDaysSince(vtEnteredAt(ep))} days in stage`} · ${esc(s.next)}</span></div>
+      <div style="display:flex;gap:8px;margin-bottom:14px"><button class="btn" style="flex:1" data-act="vtStep" data-id="${ep.id}" data-v="-1" ${prv ? '' : 'disabled'}>${I.left}${prv ? esc(prv.short) : 'Back'}</button><button class="btn primary" style="flex:1.4" data-act="vtStep" data-id="${ep.id}" data-v="1" ${nxt ? '' : 'disabled'}>${nxt ? 'Next: ' + esc(nxt.short) : 'Done'}${I.right}</button></div>
+      ${b ? `<div class="vt-blk"><b>${I.flag} Blocked</b>${esc(b.reason)}<small>${b.src === 'inbox' ? 'From Needed from me. Clears when that item is handled.' : 'Flagged by you · ' + esc(vtFmt(b.at))}</small>${b.src === 'flag' ? `<button class="btn sm ghost" style="margin-top:8px" data-act="vtUnblock" data-id="${ep.id}">Clear flag</button>` : ''}</div>`
+        : `<form class="qadd" data-form="vtBlock" data-id="${ep.id}" style="margin:0 0 14px"><input name="r" placeholder="Stuck on something? Flag it with a short reason" autocomplete="off" maxlength="140" aria-label="Reason for blocking"><button class="btn sm" aria-label="Flag">${I.flag}Flag</button></form>`}
+      <form id="vtForm" data-form="vtep" data-chg="vtForm" data-id="${ep.id}" autocomplete="off">
+        <div class="two">${fIn('title', 'Title', ep.title, 'maxlength="80" placeholder="What it is about"')}<div class="fld"><label class="l">Due</label><input type="date" name="due" value="${esc(ep.due || '')}"></div></div>
+        <label class="l">Timeline</label>
+        <div class="vt-tl">${VT_STAGES.map((x, k) => { const h = last(x.id), cls = k < i ? 'done' : k === i ? 'now' : 'up'; return `<div class="r ${cls}" style="--c:${vtColor(x.id)}"><span class="d"></span><div class="m"><span>${esc(x.label)}</span><small>${k <= i && h ? esc(vtFmt(h.at)) + (h.via && !/^hub/.test(h.via) ? ' · ' + esc(h.via) : '') : h ? 'earlier · ' + esc(fmtD(ymd(new Date(h.at)))) : '—'}</small></div></div>`; }).join('')}</div>
+        ${fTa('notes', 'Notes', ep.notes, 'Anything worth remembering')}
+        <div class="vt-links"><label class="l">Links</label>
+          ${[['notion', 'Notion page'], ['drive', 'Drive folder'], ['video', 'Finished video']].map(([k, l]) => `<div class="fld"><label class="l">${l}${ep.links?.[k] ? `<a href="${esc(safeUrl(ep.links[k]))}" target="_blank" rel="noopener" style="color:var(--accent);text-transform:none;letter-spacing:0">Open ${I.ext}</a>` : ''}</label><input name="link_${k}" value="${esc(ep.links?.[k] || '')}" placeholder="https://…" inputmode="url"></div>`).join('')}</div>
+      </form>
+      ${items.length || t ? `<label class="l" style="margin-top:4px">Linked</label>${items.map(x => `<div class="mrow click" data-act="inbox" data-id="${x.id}"><span class="cat">${I.inbox}</span><div class="t"><div>${esc(x.title)}</div><small>${x.kind === 'approval' ? 'Needs your approval' : 'Needs doing'}${x.source && x.source !== 'manual' ? ' · ' + esc(x.source) : ''}</small></div></div>`).join('')}
+        ${t ? `<div class="mrow click" data-act="task" data-id="${t.id}"><span class="cat">${I.eye}</span><div class="t"><div>${esc(t.title)}</div><small>In their portal · ${t.approval ? { pending: 'awaiting their approval', approved: 'approved by the client', changes: 'they asked for changes' }[aprState(ep.portal_id, t.id)] : t.done ? 'delivered' : 'not delivered yet'}</small></div></div>` : ''}` : ''}
+    </div>
+    <div class="sh-foot"><button class="btn danger ghost" data-act="vtDel" data-id="${ep.id}">${I.trash}Delete</button><div class="r"><button class="btn primary" data-act="close">Done</button></div></div>`;
+}
+function flushEpForm(ep) {
+  const f = $('#vtForm'); if (!f || f.dataset.id !== ep.id) return;
+  const e = f.elements, links = { notion: e.link_notion.value.trim(), drive: e.link_drive.value.trim(), video: e.link_video.value.trim() };
+  const patch = {};
+  if (e.title.value.trim() !== (ep.title || '')) patch.title = e.title.value.trim();
+  if ((e.due.value || null) !== (ep.due || null)) patch.due = e.due.value || null;
+  if (e.notes.value !== (ep.notes || '')) patch.notes = e.notes.value;
+  if (JSON.stringify(links) !== JSON.stringify({ notion: ep.links?.notion || '', drive: ep.links?.drive || '', video: ep.links?.video || '' })) patch.links = links;
+  if (Object.keys(patch).length) vtUpdate(ep, patch, 'due' in patch ? { type: 'due', text: patch.due ? `due ${fmtD(patch.due)}` : 'due date cleared' } : null).then(() => renderLater(50));
+}
+function vtNewEpisode(pid) {
+  if (!D.portals.length) return toast('Add a client first');
+  const p0 = portal(pid) || portal(S.vtClient) || portal(S.r?.pid) || sortedPortals()[0];
+  const nextN = id => Math.max(0, ...D.episodes.filter(e => e.portal_id === id).map(e => e.number)) + 1;
+  formSheet({ kicker: 'Videos', title: 'New episode', submit: 'Add episode',
+    body: `<div class="two">${fSel('pid', 'Client', portalOpts(), p0?.id)}${fIn('number', 'Episode number', nextN(p0?.id), 'type="number" min="0" step="1" required inputmode="numeric"')}</div>
+      <div class="two">${fIn('title', 'Title', '', 'placeholder="What it is about" maxlength="80"')}<div class="fld"><label class="l">Due</label><input type="date" name="due"></div></div>
+      ${fSel('stage', 'Starting stage', VT_STAGES.map(s => [s.id, s.label]), 'scripted')}${fTa('notes', 'Notes', '', 'Topic, angle, anything useful')}
+      <p class="muted" style="font-size:13px">Adding at Scripted puts “Approve the script” in Needed from me. Prefer Claude to do the lot? Run <b>/super-client-video</b>; it will show up here on its own.</p>`,
+    onSubmit: async f => {
+      const pid2 = f.get('pid'), n = parseInt(f.get('number'), 10);
+      if (!Number.isInteger(n) || n < 0) { toast('Enter a whole episode number'); return false; }
+      if (D.episodes.some(e => e.portal_id === pid2 && e.number === n)) { toast(`${portal(pid2)?.name} already has episode ${n}`); return false; }
+      const ep = await vtCreate({ portal_id: pid2, number: n, title: f.get('title').trim(), stage: f.get('stage'), due: f.get('due') || null, notes: f.get('notes') });
+      if (ep) toast(`Added ${vtName(ep)}`);
+      return !!ep;
+    } });
+}
+/* ⋯ on a card: jump to any stage */
+function vtMenu(anchor, id) {
+  closeMenu();
+  const ep = vtEp(id); if (!ep) return;
+  const r = anchor.getBoundingClientRect(), m = document.createElement('div'); m.className = 'menu';
+  m.innerHTML = `<div class="mh">${esc(vtName(ep))}<br><b style="color:var(--ink)">Move to</b></div><hr>` + VT_STAGES.map(s => `<button class="mi" data-act="vtMove" data-id="${ep.id}" data-v="${s.id}" ${s.id === ep.stage ? 'style="font-weight:700"' : ''}><span class="dot" style="--c:${vtColor(s.id)}"></span>${esc(s.label)}${s.id === ep.stage ? I.check : ''}</button>`).join('');
+  document.body.appendChild(m);
+  const top = r.bottom + 8, h = m.offsetHeight;
+  m.style.top = (top + h > innerHeight - 10 ? Math.max(10, r.top - h - 8) : top) + 'px'; m.style.right = Math.max(10, innerWidth - r.right) + 'px';
+  setTimeout(() => addEventListener('pointerdown', function off(e) { if (!m.contains(e.target)) { closeMenu(); removeEventListener('pointerdown', off, true); } }, true));
+}
+/* drag and drop between columns (the ⋯ menu covers keyboard and touch) */
+let vtDrag = null;
+document.addEventListener('dragstart', e => { const c = e.target.closest?.('.vt-card[draggable]'); if (!c) return; vtDrag = c.dataset.id; e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', vtDrag); } catch {} requestAnimationFrame(() => c.classList.add('drag')); });
+document.addEventListener('dragend', () => { vtDrag = null; $$('.vt-card.drag').forEach(c => c.classList.remove('drag')); $$('.vt-col.over').forEach(c => c.classList.remove('over')); });
+document.addEventListener('dragover', e => { const col = e.target.closest?.('.vt-col'); if (!col || !vtDrag) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move'; $$('.vt-col.over').forEach(c => c !== col && c.classList.remove('over')); col.classList.add('over'); });
+document.addEventListener('dragleave', e => { const col = e.target.closest?.('.vt-col'); if (col && !col.contains(e.relatedTarget)) col.classList.remove('over'); });
+document.addEventListener('drop', e => {
+  const col = e.target.closest?.('.vt-col'); if (!col) return; e.preventDefault();
+  const id = vtDrag || e.dataTransfer.getData('text/plain'), ep = vtEp(id); vtDrag = null; col.classList.remove('over');
+  if (!ep || ep.stage === col.dataset.stage) return;
+  const from = ep.stage;
+  vtSetStage(ep, col.dataset.stage).then(ok => { if (!ok) return; render(false); $(`.vt-card[data-id="${ep.id}"]`)?.classList.add('land'); toast(`${vtName(ep)} → ${VT_STAGES[VT_IDX[ep.stage]].label}`, () => vtSetStage(ep, from)); });
+});
+
 /* ---------- actions (one delegated listener for the whole app) ---------- */
 const A = {
   go: el => { closeMenu(); go(el.dataset.v); },
@@ -1456,6 +1815,18 @@ const A = {
   obStart: el => { saveClient(el.dataset.id, { ob_start: todayKey() }); S.obSel = el.dataset.id; render(false); },
   obStop: el => { const p = portal(el.dataset.id); if (!confirm(`Stop tracking onboarding for ${p.name}? Ticks are kept.`)) return; saveClient(p.id, { ob_start: null }); render(false); },
   copy: el => { navigator.clipboard?.writeText(el.dataset.v).then(() => toast(`Copied ${el.dataset.v}. Paste it into Claude.`), () => toast(el.dataset.v)); },
+  // videos
+  vtView: el => { S.vtView = el.dataset.v; lsSet('hub.vtView', S.vtView); $('#vtbody').innerHTML = vtBody(); $$('[data-seg="vtview"] button').forEach(b => b.classList.toggle('on', b === el)); syncSegs(); },
+  vtClient: el => { S.vtClient = el.dataset.v; $$('[data-act="vtClient"]').forEach(b => b.classList.toggle('on', b === el)); $('#vtbody').innerHTML = vtBody(); },
+  vtOpen: el => { closeMenu(); openEpisode(el.dataset.id); },
+  vtNew: el => vtNewEpisode(el.dataset.pid),
+  vtMenu: el => vtMenu(el, el.dataset.id),
+  vtMove: el => { closeMenu(); const ep = vtEp(el.dataset.id); if (!ep || ep.stage === el.dataset.v) return; const from = ep.stage; vtSetStage(ep, el.dataset.v).then(ok => { if (!ok) return; render(false); if (SH?.kind === 'vtep') redrawSheet(); toast(`${vtName(ep)} → ${VT_STAGES[VT_IDX[ep.stage]].label}`, () => vtSetStage(ep, from)); }); },
+  vtStep: el => { const ep = vtEp(el.dataset.id); if (!ep) return; const to = VT_STAGES[VT_IDX[ep.stage] + +el.dataset.v]; if (!to) return; flushEpForm(ep); vtSetStage(ep, to.id).then(ok => { if (ok) { redrawSheet(); renderLater(50); } }); },
+  vtAdvance: el => { const ep = vtEp(el.dataset.id); if (!ep) return; el.classList.add('on', 'pop'); vtAdvance(ep); setTimeout(() => render(false), 350); },
+  vtUnblock: el => { const ep = vtEp(el.dataset.id); if (!ep) return; vtUpdate(ep, { blocked: null }, { type: 'unblocked' }).then(() => { redrawSheet(); renderLater(50); }); },
+  vtDel: el => { const ep = vtEp(el.dataset.id); if (ep && confirm(`Delete ${vtName(ep)}? Its history goes too.`)) vtDelete(ep); },
+  vtActAll: () => { S.vtActAll = !S.vtActAll; render(false); },
   // needed from me
   inbox: el => openInbox(el.dataset.id, el.dataset.v === 'changes'),
   inboxDo: el => {
@@ -1573,6 +1944,17 @@ const F = {
     if (error) return toast(error.message);
     (D.access[pid] ||= []).push(email); render(false); toast('Access given');
   },
+  vtQuick: async f => {
+    const raw = f.t.value.trim(); if (!raw) return;
+    const m = raw.match(/^(?:ep(?:isode)?\.?\s*)?(\d+)\s*[-:·.]?\s*(.*)$/i), pid = f.dataset.pid;
+    const number = m ? +m[1] : Math.max(0, ...D.episodes.filter(e => e.portal_id === pid).map(e => e.number)) + 1, title = m ? m[2].trim() : raw;
+    if (D.episodes.some(e => e.portal_id === pid && e.number === number)) return toast(`${portal(pid)?.name} already has episode ${number}`);
+    f.t.value = '';
+    const ep = await vtCreate({ portal_id: pid, number, title });
+    if (ep) { render(false); toast(`Added ${vtName(ep)}`); }
+  },
+  vtBlock: f => { const ep = vtEp(f.dataset.id), r = f.r.value.trim(); if (!ep || !r) return; vtUpdate(ep, { blocked: { reason: r, at: new Date().toISOString() } }, { type: 'blocked', text: r }).then(() => { redrawSheet(); renderLater(50); }); },
+  vtep: f => { const ep = vtEp(f.dataset.id); if (ep) flushEpForm(ep); },
   inboxQuick: f => { const t = f.t.value.trim(); if (!t) return; f.t.value = ''; addInbox({ title: t }); setTimeout(() => $('form[data-form="inboxQuick"] input')?.focus({ preventScroll: true }), 50); },
   inbox: (f, sub) => {
     const e = f.elements, id = SH?.ctx?.id, x = id && D.inbox.find(i => i.id === id), decision = sub?.value || 'save';
@@ -1600,6 +1982,7 @@ document.addEventListener('submit', e => { const f = e.target.closest('form[data
 document.addEventListener('input', e => {
   const el = e.target;
   if (el.dataset.in === 'q') { S.q = el.value.trim().toLowerCase(); $('#tbody').innerHTML = tasksBody(); }
+  if (el.dataset.in === 'vtq') { S.vtQ = el.value.trim().toLowerCase(); $('#vtbody').innerHTML = vtBody(); }
   if (el.matches('.composer textarea, .compose-row textarea')) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 140) + 'px'; }
 });
 document.addEventListener('change', e => {
@@ -1610,6 +1993,8 @@ document.addEventListener('change', e => {
     flushTaskForm(t);
     if (e.target.name === 'deliverable' && before !== t.deliverable) redrawSheet();
   }
+  if (el.dataset.chg === 'vtForm') { const ep = vtEp(el.dataset.id); if (ep) flushEpForm(ep); }
+  if (e.target.dataset.chg === 'vtStage') { const ep = vtEp(e.target.dataset.id); if (ep) { flushEpForm(ep); vtSetStage(ep, e.target.value).then(ok => { if (ok) { redrawSheet(); renderLater(50); } }); } }
   if (el.dataset.chg === 'obField') {
     const f = el.dataset.f, v = el.value;
     saveClient(el.dataset.pid, { [f]: f === 'ob_call_at' ? (v ? new Date(v).toISOString() : null) : (v || null) });
