@@ -96,14 +96,15 @@
   --vt-max: 1320px;
 
   /* Stage palette: soft and desaturated, only ever used for dots, pills, fills */
-  --vt-stage-1: #a6b4dc;   /* Scripted               */
-  --vt-stage-2: #ada4de;   /* Script approved        */
-  --vt-stage-3: #c9a8d6;   /* Sent to client         */
-  --vt-stage-4: #9fc1dc;   /* Footage uploaded       */
-  --vt-stage-5: #92c4bd;   /* Editing                */
-  --vt-stage-6: #d8c494;   /* Waiting for approval   */
-  --vt-stage-7: #9dcaa4;   /* Approved               */
-  --vt-stage-8: #a8b1bb;   /* Feedback video recorded*/
+  --vt-stage-1: #a6b4dc;   /* Scripted                    */
+  --vt-stage-2: #ada4de;   /* Script approved             */
+  --vt-stage-3: #c9a8d6;   /* Waiting for footage         */
+  --vt-stage-4: #9fc1dc;   /* Footage uploaded            */
+  --vt-stage-5: #92c4bd;   /* Editing                     */
+  --vt-stage-6: #d8c494;   /* Ready for my review         */
+  --vt-stage-7: #d4a7bf;   /* Waiting for client approval */
+  --vt-stage-8: #9dcaa4;   /* Approved                    */
+  --vt-stage-9: #a8b1bb;   /* Feedback video recorded     */
   --vt-blocked: #e3a776;
 }
 
@@ -658,14 +659,15 @@ const CONFIG = {
    waitingOn drives the Overview ("Waiting on me" / "Waiting on clients").
    nextAction is the short hint shown in the attention list and the sheet.      */
 const STAGES = [
-  { id: 'scripted',          label: 'Scripted',                short: 'Scripted',      waitingOn: 'me',     nextAction: 'Approve the script' },
-  { id: 'script_approved',   label: 'Script approved',         short: 'Approved ✓',    waitingOn: 'me',     nextAction: 'Send it to the client' },
-  { id: 'sent_to_client',    label: 'Sent to client',          short: 'Sent',          waitingOn: 'client', nextAction: 'Waiting for footage' },
-  { id: 'footage_uploaded',  label: 'Footage uploaded',        short: 'Footage in',    waitingOn: 'me',     nextAction: 'Start the edit' },
-  { id: 'editing',           label: 'Editing',                 short: 'Editing',       waitingOn: 'none',   nextAction: 'Edit in progress' },
-  { id: 'waiting_approval',  label: 'Waiting for approval',    short: 'Review',        waitingOn: 'me',     nextAction: 'Review the video' },
-  { id: 'approved',          label: 'Approved',                short: 'Approved',      waitingOn: 'me',     nextAction: 'Record the feedback video' },
-  { id: 'feedback_recorded', label: 'Feedback video recorded', short: 'Done',          waitingOn: 'none',   nextAction: 'Done' },
+  { id: 'scripted',          label: 'Scripted',                    short: 'Scripted',    waitingOn: 'me',     nextAction: 'Approve the script' },
+  { id: 'script_approved',   label: 'Script approved',             short: 'Approved ✓',  waitingOn: 'me',     nextAction: 'Send it to the client' },
+  { id: 'sent_to_client',    label: 'Waiting for footage',         short: 'Footage?',    waitingOn: 'client', nextAction: 'Client is recording' },
+  { id: 'footage_uploaded',  label: 'Footage uploaded',            short: 'Footage in',  waitingOn: 'me',     nextAction: 'Start the edit' },
+  { id: 'editing',           label: 'Editing',                     short: 'Editing',     waitingOn: 'none',   nextAction: 'Edit in progress' },
+  { id: 'waiting_approval',  label: 'Ready for my review',         short: 'My review',   waitingOn: 'me',     nextAction: 'Review the video' },
+  { id: 'client_approval',   label: 'Waiting for client approval', short: 'Client OK?',  waitingOn: 'client', nextAction: 'Client is reviewing' },
+  { id: 'approved',          label: 'Approved',                    short: 'Approved',    waitingOn: 'me',     nextAction: 'Record the feedback video' },
+  { id: 'feedback_recorded', label: 'Feedback video recorded',     short: 'Done',        waitingOn: 'none',   nextAction: 'Done' },
 ];
 const STAGE_INDEX = Object.assign(Object.create(null), Object.fromEntries(STAGES.map((s, i) => [s.id, i])));
 const isStageId = (s) => typeof s === 'string' && s in STAGE_INDEX;
@@ -685,9 +687,9 @@ const SEED_CLIENTS = [
    alive on first open. history = every stage the episode has entered, in order. */
 const SEED_EPISODES = [
   // Camp Fit
-  { clientId: 'camp-fit', number: 3, stage: 'approved',
-    history: [['scripted', 24], ['script_approved', 23.6], ['sent_to_client', 23.5], ['footage_uploaded', 13], ['editing', 12.5], ['waiting_approval', 6], ['approved', 2]],
-    notes: 'Gym-floor walkthrough. Client loved the pacing. Feedback video still to record.',
+  { clientId: 'camp-fit', number: 3, stage: 'client_approval',
+    history: [['scripted', 24], ['script_approved', 23.6], ['sent_to_client', 23.5], ['footage_uploaded', 13], ['editing', 12.5], ['waiting_approval', 6], ['client_approval', 2]],
+    notes: 'Gym-floor walkthrough. Sent to Camp Fit for sign-off on Friday.',
     links: { notion: 'https://www.notion.so/', drive: 'https://drive.google.com/', video: 'https://drive.google.com/' } },
   { clientId: 'camp-fit', number: 4, stage: 'editing',
     history: [['scripted', 12], ['script_approved', 11.8], ['sent_to_client', 11.7], ['footage_uploaded', 4], ['editing', 3]],
@@ -700,7 +702,7 @@ const SEED_EPISODES = [
 
   // Callum
   { clientId: 'callum', number: 1, stage: 'feedback_recorded',
-    history: [['scripted', 40], ['script_approved', 39], ['sent_to_client', 39], ['footage_uploaded', 30], ['editing', 29], ['waiting_approval', 22], ['approved', 20], ['feedback_recorded', 18]],
+    history: [['scripted', 40], ['script_approved', 39], ['sent_to_client', 39], ['footage_uploaded', 30], ['editing', 29], ['waiting_approval', 22], ['client_approval', 21], ['approved', 20], ['feedback_recorded', 18]],
     notes: 'First episode. Intro to the series.',
     links: { notion: 'https://www.notion.so/', drive: 'https://drive.google.com/', video: 'https://drive.google.com/' } },
   { clientId: 'callum', number: 2, stage: 'waiting_approval',
@@ -725,8 +727,8 @@ const SEED_EPISODES = [
 
   // Daniel
   { clientId: 'daniel', number: 5, stage: 'approved',
-    history: [['scripted', 20], ['script_approved', 19.5], ['sent_to_client', 19.4], ['footage_uploaded', 11], ['editing', 10.5], ['waiting_approval', 6.5], ['approved', 5]],
-    notes: 'Approved Tuesday. Filed to end product and posted to the portal.',
+    history: [['scripted', 20], ['script_approved', 19.5], ['sent_to_client', 19.4], ['footage_uploaded', 11], ['editing', 10.5], ['waiting_approval', 6.5], ['client_approval', 6], ['approved', 5]],
+    notes: 'Daniel approved Tuesday. Filed to end product and posted to the portal.',
     links: { notion: 'https://www.notion.so/', drive: 'https://drive.google.com/', video: 'https://drive.google.com/' } },
   { clientId: 'daniel', number: 6, stage: 'script_approved',
     history: [['scripted', 2], ['script_approved', 1]],
@@ -1055,7 +1057,8 @@ const Data = (() => {
      footage watcher: upload finished             → 'footage_uploaded'
      edit procedure started / job folder prepped  → 'editing'
      video uploaded to "waiting for approval"     → 'waiting_approval'
-     Stan approves the finished video             → 'approved'
+     Stan approves it and it goes to the client   → 'client_approval'
+     the client signs off the final video         → 'approved'
 
    'feedback_recorded' is deliberately rejected: only Stan ticks that, by hand.
    TODO when wiring up: accept the hub's payload shape, and when the episode is
@@ -1300,9 +1303,9 @@ function renderOverview(view) {
 
     <section class="vt-summary" aria-label="Summary">
       ${stat('In progress', open.length, 'var(--vt-stage-5)', 1)}
-      ${stat('Waiting on clients', onClients.length, 'var(--vt-stage-3)', 2)}
+      ${stat('Waiting on clients', onClients.length, 'var(--vt-stage-7)', 2)}
       ${stat('Waiting on me', onMe.length, 'var(--vt-stage-6)', 3)}
-      ${stat('Delivered this week', delivered.length, 'var(--vt-stage-7)', 4)}
+      ${stat('Delivered this week', delivered.length, 'var(--vt-stage-8)', 4)}
     </section>
 
     <section class="vt-glass vt-panel ${animate ? 'vt-fade-in' : ''}" style="--i:5" aria-labelledby="vt-attention-title">
