@@ -334,7 +334,7 @@ body { margin: 0; min-height: 100vh; background: var(--vt-bg); -webkit-text-size
   color: var(--vt-ink-3);
   transition: box-shadow var(--vt-fast) var(--vt-ease);
 }
-.vt-search:focus-within { box-shadow: var(--vt-shadow-2), 0 0 0 3px var(--vt-accent-soft), inset 0 1px 0 var(--vt-glass-highlight); }
+.vt-search:focus-within { box-shadow: var(--vt-shadow-2), 0 0 0 2px var(--vt-focus), inset 0 1px 0 var(--vt-glass-highlight); }
 .vt-search svg { width: 16px; height: 16px; flex: none; }
 .vt-search input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--vt-ink); outline: none; height: 100%; }
 .vt-search input::placeholder { color: var(--vt-ink-3); }
@@ -461,7 +461,6 @@ body { margin: 0; min-height: 100vh; background: var(--vt-bg); -webkit-text-size
 /* The title is the real button (keyboard + screen readers); the rest of the card is the drag surface
    and opens the sheet on click as a convenience. */
 .vt-card-open { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; text-align: left; border: 0; background: transparent; padding: 0; margin: 0; color: var(--vt-ink); min-width: 0; max-width: 100%; }
-.vt-card-open:focus-visible { outline-offset: 4px; }
 .vt-card-client { font-size: var(--vt-fs-small); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--vt-ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .vt-card-ep { font-weight: 600; letter-spacing: -0.01em; }
 .vt-card-ep small { font-weight: 500; color: var(--vt-ink-2); font-size: var(--vt-fs-small); margin-left: 6px; }
@@ -550,20 +549,21 @@ select.vt-field { appearance: none; -webkit-appearance: none; padding-right: 36p
 
 /* ----- 9. Menus, dialogs, toasts ---------------------------------------- */
 .vt-menu {
-  position: fixed; z-index: 60; min-width: 230px; padding: 6px;
+  position: fixed; z-index: 60; min-width: 230px; max-width: calc(100vw - 16px); padding: 6px;
   border-radius: var(--vt-r-md);
   box-shadow: var(--vt-shadow-3), inset 0 1px 0 var(--vt-glass-highlight);
   transform-origin: top right;
   animation: vt-pop var(--vt-fast) var(--vt-ease) both;
 }
 @keyframes vt-pop { from { opacity: 0; transform: translateY(-4px) scale(.98); } to { opacity: 1; transform: none; } }
-.vt-menu-title { padding: 6px 10px 6px; font-size: var(--vt-fs-small); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--vt-ink-3); }
+.vt-menu-title { padding: 6px 10px 6px; font-size: var(--vt-fs-small); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--vt-ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vt-menu-item {
   display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
   padding: 8px 10px; border: 0; border-radius: var(--vt-r-sm); background: transparent; color: var(--vt-ink);
   transition: background var(--vt-fast);
 }
-.vt-menu-item:hover, .vt-menu-item:focus-visible { background: var(--vt-accent-soft); outline: none; }
+.vt-menu-item:hover { background: var(--vt-accent-soft); }
+.vt-menu-item:focus-visible { background: var(--vt-accent-soft); box-shadow: inset 0 0 0 2px var(--vt-focus); }
 .vt-menu-item[aria-checked="true"] { font-weight: 600; }
 .vt-menu-item[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
 .vt-menu-item .vt-muted { margin-left: auto; }
@@ -618,6 +618,7 @@ select.vt-field { appearance: none; -webkit-appearance: none; padding-right: 36p
 /* Touch devices: iOS Safari zooms the page when a field under 16px gets focus. */
 @media (pointer: coarse) {
   .vt input, .vt select, .vt textarea { font-size: 16px; }
+  .vt-select select { max-width: 260px; }
 }
 .vt-app { padding-left: calc(var(--vt-gutter) + env(safe-area-inset-left)); padding-right: calc(var(--vt-gutter) + env(safe-area-inset-right)); }
 
@@ -1109,6 +1110,7 @@ const startOfDay = (t) => { const d = new Date(t); d.setHours(0, 0, 0, 0); retur
 const daysSince = (ts) => Math.max(0, Math.round((startOfDay(Date.now()) - startOfDay(ts)) / DAY));
 const progressPct = (ep) => Math.round((STAGE_INDEX[ep.stage] / (STAGES.length - 1)) * 100);
 const epName = (ep, client) => `${client ? client.name : 'Unknown'} · Ep ${ep.number}`;
+const epWord = (n) => (n === 1 ? 'episode' : 'episodes');
 
 function fmtDays(n, { suffix = '' } = {}) {
   if (n === 0) return 'Today';
@@ -1236,7 +1238,7 @@ function renderClientChips() {
   for (const ep of Data.getEpisodes()) counts[ep.clientId] = (counts[ep.clientId] || 0) + 1;
   const chip = (id, label, count) => `
     <button type="button" class="vt-chip" data-client="${esc(id)}" aria-pressed="${ui.clientFilter === id}">
-      <span class="vt-chip-name">${esc(label)}</span>${count != null ? `<span class="vt-count">${count}<span class="vt-sr"> episodes</span></span>` : ''}
+      <span class="vt-chip-name">${esc(label)}</span>${count != null ? `<span class="vt-count">${count}<span class="vt-sr"> ${epWord(count)}</span></span>` : ''}
     </button>`;
   el.innerHTML = chip('all', 'All clients') + clients.map((c) => chip(c.id, c.name, counts[c.id] || 0)).join('');
 }
@@ -1299,7 +1301,7 @@ function renderOverview(view) {
     if (!eps.length && filtersActive()) return '';
     return `
       <section class="vt-glass vt-client-card ${animate ? 'vt-fade-in' : ''}" style="--i:${i + 6}" aria-label="${esc(client.name)} episodes">
-        <div class="vt-panel-head"><h2>${esc(client.name)}</h2><span class="vt-count">${eps.length}<span class="vt-sr"> episodes</span></span></div>
+        <div class="vt-panel-head"><h2>${esc(client.name)}</h2><span class="vt-count">${eps.length}<span class="vt-sr"> ${epWord(eps.length)}</span></span></div>
         ${eps.length ? `<ul>${eps.map(({ ep }) => `
           <li><button type="button" class="vt-mini" data-open="${esc(ep.id)}">
             <span class="vt-dot" style="--c:${stageColor(ep.stage)}"></span>
@@ -1311,7 +1313,7 @@ function renderOverview(view) {
   }).join('');
 
   const subtitle = [
-    `${open.length} ${open.length === 1 ? 'episode' : 'episodes'} in flight`,
+    `${open.length} ${epWord(open.length)} in flight`,
     `${onMe.length} need${onMe.length === 1 ? 's' : ''} you`,
     `${onClients.length} waiting on clients`,
   ].join(' · ');
@@ -1326,7 +1328,7 @@ function renderOverview(view) {
     </section>
 
     <section class="vt-summary" aria-label="Summary">
-      ${stat('In progress', open.length, `of ${all.length} ${all.length === 1 ? 'episode' : 'episodes'}`, 'var(--vt-stage-5)', 1)}
+      ${stat('In progress', open.length, `of ${all.length} ${epWord(all.length)}`, 'var(--vt-stage-5)', 1)}
       ${stat('Waiting on clients', onClients.length, 'footage not in yet', 'var(--vt-stage-3)', 2)}
       ${stat('Waiting on me', onMe.length, onMe.filter((x) => x.ep.blocked).length ? `${onMe.filter((x) => x.ep.blocked).length} blocked` : 'nothing blocked', 'var(--vt-stage-6)', 3)}
       ${stat('Delivered this week', delivered.length, `approved in the last ${CONFIG.deliveredWindowDays} days`, 'var(--vt-stage-7)', 4)}
@@ -1335,7 +1337,7 @@ function renderOverview(view) {
     <section class="vt-glass vt-panel ${animate ? 'vt-fade-in' : ''}" style="--i:5" aria-labelledby="vt-attention-title">
       <div class="vt-panel-head">
         <h2 id="vt-attention-title">Needs my attention</h2>
-        <span class="vt-count">${onMe.length}<span class="vt-sr"> episodes</span></span>
+        <span class="vt-count">${onMe.length}<span class="vt-sr"> ${epWord(onMe.length)}</span></span>
         <span class="vt-muted">days since the last change</span>
       </div>
       ${onMe.length ? `<ul>${attention}</ul>` : `<div class="vt-empty">Nothing is waiting on you right now.</div>`}
@@ -1400,7 +1402,7 @@ function renderBoard(view) {
         <header class="vt-col-head">
           <span class="vt-dot" style="--c:${stageColor(s.id)}"></span>
           <h2 id="vt-col-${esc(s.id)}" title="${esc(s.label)}">${esc(s.label)}</h2>
-          <span class="vt-count">${eps.length}<span class="vt-sr"> episodes</span></span>
+          <span class="vt-count">${eps.length}<span class="vt-sr"> ${epWord(eps.length)}</span></span>
         </header>
         <ul class="vt-col-body" role="list">${cards}</ul>
         <div class="vt-col-hint" aria-hidden="true">${s.id === FINAL_STAGE ? 'Drop an approved episode to tick it' : 'Drop here'}</div>
@@ -1517,7 +1519,7 @@ function moveEpisode(id, stageId) {
   if (!res.ok) { toast(res.error, { kind: 'warn' }); return; }
   if (!res.changed) return;
   toast(`${epName(before, client)} → ${STAGES[STAGE_INDEX[stageId]].label}`, {
-    action: { label: 'Undo', onClick: () => { if (Data.getEpisode(id)) Data.restoreEpisode(before); } },
+    action: { label: 'Undo', onClick: () => { if (!Data.getEpisode(id)) return; const r = Data.restoreEpisode(before); if (!r.ok) toast(r.error, { kind: 'warn' }); } },
   });
 }
 
@@ -1574,11 +1576,17 @@ function flushSheetEdits() {
   if (!ep) return;
   const patch = {};
   const notes = $('[data-field="notes"]', sheet);
-  if (notes && notes.value !== ep.notes) patch.notes = notes.value;
+  if (notes && notes.value !== String(ep.notes).replace(/\r\n?/g, '\n')) patch.notes = notes.value;
   const links = {};
   $$('[data-link]', sheet).forEach((input) => { if (input.value.trim() !== ep.links[input.dataset.link]) links[input.dataset.link] = input.value; });
   if (Object.keys(links).length) patch.links = links;
   if (Object.keys(patch).length) Data.updateEpisode(id, patch);
+}
+/* Drops anything pending without saving: used when the whole dataset is replaced under the sheet. */
+function discardSheetEdits() {
+  clearTimeout(sheetSaveTimer); sheetSaveTimer = null;
+  const sheet = $('#vt-sheet', ui.root);
+  if (sheet) delete sheet.dataset.episodeId;
 }
 
 function renderSheet() {
@@ -1605,8 +1613,9 @@ function renderSheet() {
   };
   // Keep keyboard focus on the same control across the rebuild.
   const active = document.activeElement;
-  let focusSel = null;
+  let focusSel = null, caret = null;
   if (active && sheet.contains(active)) {
+    if (typeof active.selectionStart === 'number') caret = { start: active.selectionStart, end: active.selectionEnd, top: active.scrollTop };
     for (const attr of ['data-act', 'data-menu', 'data-link', 'data-field', 'data-close']) {
       if (active.hasAttribute(attr)) { focusSel = `[${attr}="${CSS.escape(active.getAttribute(attr))}"]`; break; }
     }
@@ -1684,7 +1693,8 @@ function renderSheet() {
 
       <section>
         <h3><label for="vt-notes">Notes</label></h3>
-        <textarea class="vt-field" id="vt-notes" data-field="notes" placeholder="Anything worth remembering about this episode">${esc(ep.notes)}</textarea>
+        <textarea class="vt-field" id="vt-notes" data-field="notes" placeholder="Anything worth remembering about this episode">
+${esc(ep.notes)}</textarea>
       </section>
 
       <section aria-label="Links">
@@ -1702,7 +1712,15 @@ function renderSheet() {
       </div>
     </div>`;
   sheet.dataset.episodeId = ep.id;
-  if (focusSel) { const next = sheet.querySelector(focusSel); if (next) next.focus({ preventScroll: true }); else $('[data-close]', sheet).focus(); }
+  if (focusSel) {
+    const next = sheet.querySelector(focusSel);
+    if (!next) { $('[data-close]', sheet).focus(); return; }
+    next.focus({ preventScroll: true });
+    if (caret && typeof next.setSelectionRange === 'function') {
+      const len = next.value.length;
+      try { next.setSelectionRange(Math.min(caret.start, len), Math.min(caret.end, len)); next.scrollTop = caret.top; } catch (e) { /* non-text input */ }
+    }
+  }
 }
 
 function bindSheet() {
@@ -1730,7 +1748,7 @@ function bindSheet() {
             if (!ok) return;
             const snapshot = Data.getEpisode(id);
             const res = Data.deleteEpisode(id);
-            if (res.ok) { closeSheet(); toast(`Deleted ${epName(snapshot, Data.getClient(snapshot.clientId))}`, { action: { label: 'Undo', onClick: () => Data.restoreEpisode(snapshot) } }); }
+            if (res.ok) { closeSheet(); toast(`Deleted ${epName(snapshot, Data.getClient(snapshot.clientId))}`, { action: { label: 'Undo', onClick: () => { const r = Data.restoreEpisode(snapshot); if (!r.ok) toast(r.error, { kind: 'warn' }); } } }); }
           });
         break;
     }
@@ -1968,6 +1986,7 @@ function toast(message, { action = null, kind = 'info', duration = null } = {}) 
   const ttl = duration != null ? duration : (action ? 12000 : 5000);   // toasts with an action stay longer
   while (host.children.length >= 3) {
     const victim = Array.from(host.children).find((c) => !c.contains(document.activeElement)) || host.firstElementChild;
+    if (ui.lastUndo && ui.lastUndo.el === victim) ui.lastUndo = null;
     victim.remove();
   }
   const el = document.createElement('div');
@@ -2087,7 +2106,7 @@ function setView(name) {
 }
 
 function onDataChange(evt) {
-  if (evt.type === 'db:replace') { ui.clientFilter = 'all'; closeSheet(); clearToasts(); }   // stale Undo must not touch the new data
+  if (evt.type === 'db:replace') { ui.clientFilter = 'all'; discardSheetEdits(); closeSheet(); clearToasts(); }   // the new data is authoritative: no stale edits or Undo
   renderClientChips();          // counts on the chips change with almost every event
   render();
   if (ui.openEpisodeId && evt.type !== 'episode:meta') {
@@ -2154,9 +2173,9 @@ function bindEvents() {
 
   // Global keys
   document.addEventListener('keydown', (e) => {
+    if (e.target.closest && e.target.closest('dialog[open]')) return;   // a modal <dialog> owns the keyboard (it cancels itself on Escape)
     const inField = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
     if (e.key === 'Escape') {
-      if (e.target.closest && e.target.closest('dialog[open]')) return;   // the <dialog> cancels itself
       if (ui.menu) closeMoveMenu(); else if (ui.openEpisodeId) closeSheet();
     }
     if (e.key === '/' && !e.metaKey && !e.ctrlKey && !inField && !ui.menu && !ui.openEpisodeId) {
