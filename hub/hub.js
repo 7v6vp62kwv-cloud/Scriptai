@@ -1444,7 +1444,7 @@ function vtInboxEpisode(x) {
   const m = (x.title || '').match(/\b(?:ep|episode)\.?\s*(\d+)\b/i); if (!m) return null;
   const n = +m[1], t = x.title.toLowerCase();
   let pid = x.portal_id;
-  if (!pid) { const p = sortedPortals().find(p => t.includes(p.name.toLowerCase())); pid = p?.id; }
+  if (!pid) { const p = sortedPortals().find(p => t.includes(p.name.toLowerCase())) || sortedPortals().find(p => new RegExp('\\b' + p.name.toLowerCase().split(/\s+/)[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b').test(t)); pid = p?.id; }
   if (!pid) return null;
   return D.episodes.find(e => e.portal_id === pid && e.number === n) || null;
 }

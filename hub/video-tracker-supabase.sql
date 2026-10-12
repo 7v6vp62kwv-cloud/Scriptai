@@ -44,16 +44,39 @@ create or replace function public.vt_is_admin() returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.portal_admins where lower(email) = lower(coalesce(auth.jwt() ->> 'email', '')));
 $$;
+revoke execute on function public.vt_is_admin() from public, anon;
+grant execute on function public.vt_is_admin() to authenticated, service_role;
 drop policy if exists "vt episodes admin" on public.vt_episodes;
 drop policy if exists "vt activity admin" on public.vt_activity;
 create policy "vt episodes admin" on public.vt_episodes for all to authenticated using (public.vt_is_admin()) with check (public.vt_is_admin());
 create policy "vt activity admin" on public.vt_activity for all to authenticated using (public.vt_is_admin()) with check (public.vt_is_admin());
 
--- ── Helper for the Super Client Video skill ────────────────────────────────
--- One call moves an episode and records it, exactly like the hub UI would:
---   select public.vt_set_stage('Camp Fit', 4, 'footage_uploaded');
---   select public.vt_set_stage('Camp Fit', 4, 'feedback_recorded');
--- The client is matched to a portal by name (case-insensitive). The episode is created if it does not exist.
+-- ── Helpers for the Super Client Video skill ───────────────────────────────
+-- Only the skill (service role key) may call these; the hub UI writes to the tables directly under RLS.
+-- The client is matched to a portal by name: exact, then first name ("Callum" → "Callum Woods"), then contains.
+create or replace function public.vt_portal_for(p_client text)
+returns public.portals
+language plpgsql stable security definer set search_path = public as $$
+declare v_portal public.portals;
+begin
+  select * into v_portal from public.portals where lower(name) = lower(trim(p_client)) order by created_at limit 1;
+  if v_portal.id is null then
+    select * into v_portal from public.portals where lower(split_part(name, ' ', 1)) = lower(trim(p_client)) order by created_at limit 1;
+  end if;
+  if v_portal.id is null then
+    select * into v_portal from public.portals where name ilike '%' || trim(p_client) || '%' order by created_at limit 1;
+  end if;
+  if v_portal.id is null then raise exception 'no portal called %', p_client; end if;
+  return v_portal;
+end;
+$$;
+revoke all on function public.vt_portal_for(text) from public, anon, authenticated;
+grant execute on function public.vt_portal_for(text) to service_role;
+
+-- vt_set_stage: one call moves an episode and records it, exactly like the hub UI would.
+-- The episode is created if it does not exist.
+--   select public.vt_set_stage('Callum', 2, 'scripted');
+--   select public.vt_set_stage('Callum', 2, 'footage_uploaded');
 create or replace function public.vt_set_stage(p_client text, p_number int, p_stage text, p_via text default 'super-client-video')
 returns public.vt_episodes
 language plpgsql security definer set search_path = public as $$
@@ -65,11 +88,7 @@ declare
   v_from   text;
 begin
   if not (p_stage = any (v_order)) then raise exception 'unknown stage %', p_stage; end if;
-  select * into v_portal from public.portals where lower(name) = lower(p_client) limit 1;
-  if v_portal.id is null then
-    select * into v_portal from public.portals where name ilike '%' || p_client || '%' order by created_at limit 1;
-  end if;
-  if v_portal.id is null then raise exception 'no portal called %', p_client; end if;
+  v_portal := public.vt_portal_for(p_client);
 
   select * into v_ep from public.vt_episodes where portal_id = v_portal.id and number = p_number;
   if v_ep.id is null then
@@ -97,5 +116,58 @@ begin
   return v_ep;
 end;
 $$;
-revoke all on function public.vt_set_stage(text, int, text, text) from public;
-grant execute on function public.vt_set_stage(text, int, text, text) to authenticated, service_role;
+revoke all on function public.vt_set_stage(text, int, text, text) from public, anon, authenticated;
+grant execute on function public.vt_set_stage(text, int, text, text) to service_role;
+
+-- vt_note: attach links and/or flag the episode as blocked (or clear the flag). Pass null to leave a field alone.
+--   select public.vt_note('Callum', 2, p_notion => 'https://notion.so/…', p_drive => 'https://drive.google.com/…');
+--   select public.vt_note('Callum', 2, p_blocked => 'Footage upload failed, chasing Callum');
+--   select public.vt_note('Callum', 2, p_blocked => '');      -- empty string clears the block
+create or replace function public.vt_note(p_client text, p_number int, p_notion text default null, p_drive text default null, p_video text default null, p_blocked text default null, p_via text default 'super-client-video')
+returns public.vt_episodes
+language plpgsql security definer set search_path = public as $$
+declare
+  v_portal public.portals;
+  v_ep     public.vt_episodes;
+  v_links  jsonb;
+  v_was    boolean;
+begin
+  v_portal := public.vt_portal_for(p_client);
+  select * into v_ep from public.vt_episodes where portal_id = v_portal.id and number = p_number;
+  if v_ep.id is null then raise exception 'no episode % for %', p_number, v_portal.name; end if;
+
+  v_links := coalesce(v_ep.links, '{}'::jsonb);
+  if p_notion is not null then v_links := v_links || jsonb_build_object('notion', p_notion); end if;
+  if p_drive  is not null then v_links := v_links || jsonb_build_object('drive',  p_drive);  end if;
+  if p_video  is not null then v_links := v_links || jsonb_build_object('video',  p_video);  end if;
+  v_was := v_ep.blocked is not null;
+
+  update public.vt_episodes
+     set links      = v_links,
+         blocked    = case when p_blocked is null then blocked
+                           when trim(p_blocked) = '' then null
+                           else jsonb_build_object('reason', trim(p_blocked), 'at', to_char(now() at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')) end,
+         updated_at = now()
+   where id = v_ep.id
+  returning * into v_ep;
+
+  if p_notion is not null or p_drive is not null or p_video is not null then
+    insert into public.vt_activity (id, type, episode_id, portal_id, via, text)
+    values ('a' || substr(md5(random()::text), 1, 10), 'note', v_ep.id, v_portal.id, p_via, 'Links updated');
+  end if;
+  if p_blocked is not null then
+    if trim(p_blocked) = '' then
+      if v_was then
+        insert into public.vt_activity (id, type, episode_id, portal_id, via, text)
+        values ('a' || substr(md5(random()::text), 1, 10), 'unblocked', v_ep.id, v_portal.id, p_via, '');
+      end if;
+    else
+      insert into public.vt_activity (id, type, episode_id, portal_id, via, text)
+      values ('a' || substr(md5(random()::text), 1, 10), 'blocked', v_ep.id, v_portal.id, p_via, trim(p_blocked));
+    end if;
+  end if;
+  return v_ep;
+end;
+$$;
+revoke all on function public.vt_note(text, int, text, text, text, text, text) from public, anon, authenticated;
+grant execute on function public.vt_note(text, int, text, text, text, text, text) to service_role;
