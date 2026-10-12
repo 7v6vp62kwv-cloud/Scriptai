@@ -529,8 +529,11 @@ body { margin: 0; min-height: 100vh; background: var(--vt-bg); -webkit-text-size
 .vt-eyebrow { display: block; font-size: var(--vt-fs-small); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--vt-ink-3); margin-bottom: 6px; overflow-wrap: anywhere; }
 .vt-sheet-body { flex: 1; overflow-y: auto; padding: 0 22px 28px; display: flex; flex-direction: column; gap: 22px; }
 .vt-sheet-body h3 { font-size: var(--vt-fs-small); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--vt-ink-3); margin-bottom: 10px; }
-.vt-stage-now { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 14px; border-radius: var(--vt-r-md); background: var(--vt-glass-soft); border: 1px solid var(--vt-glass-border); }
+.vt-stage-now { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; width: 100%; text-align: left; padding: 12px 14px; border-radius: var(--vt-r-md); background: var(--vt-glass-soft); border: 1px solid var(--vt-glass-border); color: var(--vt-ink); cursor: pointer;
+  transition: background var(--vt-fast), transform var(--vt-med) var(--vt-spring), box-shadow var(--vt-med) var(--vt-ease); }
+.vt-stage-now:hover { background: var(--vt-glass); transform: translateY(-1px); box-shadow: var(--vt-shadow-1); }
 .vt-stage-now strong { font-weight: 600; }
+.vt-stage-now > svg { width: 14px; height: 14px; color: var(--vt-ink-3); margin-left: -4px; }
 .vt-stage-now .vt-muted { margin-left: auto; }
 .vt-sheet-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .vt-sheet-actions .vt-btn { flex: 1 1 auto; }
@@ -714,12 +717,12 @@ const CONFIG = {
    nextAction is the short hint shown in the attention list and the sheet.      */
 const STAGES = [
   { id: 'scripted',          label: 'Scripted',                    short: 'Scripted',    waitingOn: 'me',     nextAction: 'Approve the script' },
-  { id: 'script_approved',   label: 'Script approved',             short: 'Approved ✓',  waitingOn: 'me',     nextAction: 'Send it to the client' },
-  { id: 'sent_to_client',    label: 'Waiting for footage',         short: 'Footage?',    waitingOn: 'client', nextAction: 'Client is recording' },
+  { id: 'script_approved',   label: 'Script approved',             short: 'Script OK',   waitingOn: 'me',     nextAction: 'Send it to the client' },
+  { id: 'sent_to_client',    label: 'Waiting for footage',         short: 'Footage',     waitingOn: 'client', nextAction: 'Client is recording' },
   { id: 'footage_uploaded',  label: 'Footage uploaded',            short: 'Footage in',  waitingOn: 'me',     nextAction: 'Start the edit' },
   { id: 'editing',           label: 'Editing',                     short: 'Editing',     waitingOn: 'none',   nextAction: 'Edit in progress' },
   { id: 'waiting_approval',  label: 'Ready for my review',         short: 'My review',   waitingOn: 'me',     nextAction: 'Review the video' },
-  { id: 'client_approval',   label: 'Waiting for client approval', short: 'Client OK?',  waitingOn: 'client', nextAction: 'Client is reviewing' },
+  { id: 'client_approval',   label: 'Waiting for client approval', short: 'Client sign-off',waitingOn: 'client', nextAction: 'Client is reviewing' },
   { id: 'approved',          label: 'Approved',                    short: 'Approved',    waitingOn: 'me',     nextAction: 'Record the feedback video' },
   { id: 'feedback_recorded', label: 'Feedback video recorded',     short: 'Done',        waitingOn: 'none',   nextAction: 'Done' },
 ];
@@ -1676,16 +1679,15 @@ function renderSheet() {
       <button type="button" class="vt-icon-btn" data-close aria-label="Close episode details">${ICONS.close}</button>
     </div>
     <div class="vt-sheet-body">
-      <div class="vt-stage-now" style="--c:${stageColor(ep.stage)}">
+      <button type="button" class="vt-stage-now" style="--c:${stageColor(ep.stage)}" data-menu="${esc(ep.id)}" aria-haspopup="menu" aria-expanded="false" aria-label="Stage: ${esc(s.label)}. Change stage">
         <span class="vt-dot is-live"></span>
-        <strong>${esc(s.label)}</strong>
+        <strong>${esc(s.label)}</strong>${ICONS.down}
         <span class="vt-muted">${esc(days === 0 ? 'moved today' : fmtDays(days, { suffix: ' in stage' }))} · ${esc(s.nextAction)}</span>
-      </div>
+      </button>
 
       <div class="vt-sheet-actions">
         <button type="button" class="vt-btn" data-act="back" ${idx === 0 ? 'disabled' : ''} aria-label="Move back to ${idx > 0 ? esc(STAGES[idx - 1].label) : 'previous stage'}">${ICONS.back}Back</button>
-        <button type="button" class="vt-btn vt-btn-primary" data-act="forward" ${idx >= STAGES.length - 1 ? 'disabled' : ''} aria-label="Move forward to ${idx < STAGES.length - 1 ? esc(STAGES[idx + 1].label) : 'next stage'}">Forward${ICONS.fwd}</button>
-        <button type="button" class="vt-btn" data-menu="${esc(ep.id)}" aria-haspopup="menu" aria-expanded="false">Move to…${ICONS.down}</button>
+        <button type="button" class="vt-btn vt-btn-primary" data-act="forward" ${idx >= STAGES.length - 1 ? 'disabled' : ''} aria-label="Move forward to ${idx < STAGES.length - 1 ? esc(STAGES[idx + 1].label) : 'next stage'}">${idx < STAGES.length - 1 ? 'Next: ' + esc(STAGES[idx + 1].short) : 'Done'}${ICONS.fwd}</button>
       </div>
 
       <label class="vt-tick">
