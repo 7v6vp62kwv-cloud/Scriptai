@@ -62,6 +62,7 @@
   --vt-warn-soft: rgba(220, 159, 71, 0.16);
   --vt-danger: #de5a5f;
   --vt-danger-soft: rgba(222, 90, 95, 0.12);
+  --vt-ok: #4f9f6e;
 
   /* Shadows (layered, soft) */
   --vt-shadow-1: 0 1px 2px rgba(22, 26, 52, 0.04), 0 10px 30px rgba(22, 26, 52, 0.07);
@@ -143,6 +144,7 @@
     --vt-focus: rgba(150, 170, 248, 0.70);
     --vt-warn-soft: rgba(220, 159, 71, 0.22);
     --vt-danger-soft: rgba(222, 90, 95, 0.18);
+    --vt-ok: #7fcf9c;
     --vt-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.30), 0 10px 30px rgba(0, 0, 0, 0.35);
     --vt-shadow-2: 0 2px 6px rgba(0, 0, 0, 0.35), 0 22px 56px rgba(0, 0, 0, 0.45);
     --vt-shadow-3: 0 8px 20px rgba(0, 0, 0, 0.40), 0 40px 90px rgba(0, 0, 0, 0.55);
@@ -179,6 +181,7 @@
   --vt-focus: rgba(150, 170, 248, 0.70);
   --vt-warn-soft: rgba(220, 159, 71, 0.22);
   --vt-danger-soft: rgba(222, 90, 95, 0.18);
+  --vt-ok: #7fcf9c;
   --vt-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.30), 0 10px 30px rgba(0, 0, 0, 0.35);
   --vt-shadow-2: 0 2px 6px rgba(0, 0, 0, 0.35), 0 22px 56px rgba(0, 0, 0, 0.45);
   --vt-shadow-3: 0 8px 20px rgba(0, 0, 0, 0.40), 0 40px 90px rgba(0, 0, 0, 0.55);
@@ -277,7 +280,10 @@ body { margin: 0; min-height: 100vh; background: var(--vt-bg); -webkit-text-size
   box-shadow: inset 0 1px 0 var(--vt-glass-highlight), 0 4px 12px var(--vt-shadow-tint);
 }
 .vt-brand strong { display: block; font-weight: 600; letter-spacing: -0.01em; line-height: 1.1; }
-.vt-brand span { display: block; color: var(--vt-ink-3); font-size: var(--vt-fs-small); line-height: 1.2; }
+.vt-brand span { display: block; color: var(--vt-ink-3); font-size: var(--vt-fs-small); line-height: 1.2; transition: color var(--vt-med); }
+.vt-brand span[data-state="ok"] { color: var(--vt-ok); }
+.vt-brand span[data-state="error"] { color: var(--vt-warn); }
+.vt-brand span[data-state="syncing"] { color: var(--vt-accent); }
 .vt-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
 .vt-seg {
@@ -454,6 +460,38 @@ body { margin: 0; min-height: 100vh; background: var(--vt-bg); -webkit-text-size
 .vt-pill-blocked svg { width: 12px; height: 12px; }
 
 .vt-storage-note { text-align: center; color: var(--vt-warn); font-size: var(--vt-fs-small); }
+
+/* Due dates */
+.vt-due { display: inline-flex; align-items: center; gap: 4px; font-size: var(--vt-fs-small); color: var(--vt-ink-3); white-space: nowrap; }
+.vt-due.is-soon { color: var(--vt-warn); font-weight: 600; }
+.vt-due.is-overdue { color: var(--vt-danger); font-weight: 600; }
+.vt-due svg { width: 12px; height: 12px; }
+
+/* Clients view */
+.vt-client-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.vt-client { padding: 14px 14px 10px; display: flex; flex-direction: column; gap: 10px; }
+.vt-client-head { display: flex; align-items: center; gap: 8px; }
+.vt-client-head h2 { font-size: var(--vt-fs-body); font-weight: 600; letter-spacing: -0.01em; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.vt-client-meta { font-size: var(--vt-fs-small); color: var(--vt-ink-3); display: flex; gap: 10px; flex-wrap: wrap; }
+.vt-mini-pipe { display: grid; grid-template-columns: repeat(9, 1fr); gap: 3px; }
+.vt-mini-pipe > span { height: 6px; border-radius: var(--vt-r-bar); background: var(--vt-hairline); position: relative; }
+.vt-mini-pipe > span.has { background: var(--c); box-shadow: 0 0 8px color-mix(in srgb, var(--c) 50%, transparent); }
+.vt-mini-pipe > span > b { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 600; color: var(--vt-ink-2); }
+.vt-client-eps { display: flex; flex-direction: column; }
+.vt-client-eps .vt-row { padding: 8px 6px; }
+.vt-client-foot { display: flex; gap: 6px; justify-content: flex-end; padding-top: 4px; border-top: 1px solid var(--vt-hairline); }
+
+/* Activity */
+.vt-act { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; font-size: var(--vt-fs-small); color: var(--vt-ink-2); }
+.vt-act .vt-dot { margin-top: 5px; }
+.vt-act b { color: var(--vt-ink); font-weight: 600; }
+.vt-act time { margin-left: auto; color: var(--vt-ink-3); white-space: nowrap; }
+.vt-act .vt-pill { height: 18px; padding: 0 7px; font-size: 10px; }
+
+/* Sheet details */
+.vt-details { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; }
+.vt-details input[type="date"] { min-width: 150px; }
+@media (max-width: 480px) { .vt-details { grid-template-columns: 1fr; } }
 
 /* ----- 7. Pipeline board ------------------------------------------------- */
 .vt-board-wrap { margin: 0 calc(-1 * var(--vt-gutter)); padding: 4px var(--vt-gutter) 14px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scroll-padding: var(--vt-gutter); -webkit-overflow-scrolling: touch; }
@@ -635,6 +673,7 @@ select.vt-field { appearance: none; -webkit-appearance: none; padding-right: 36p
 @media (max-width: 860px) {
   .vt-topbar { top: 8px; padding: 10px 10px 10px 14px; }
   .vt-seg { order: 3; flex: 1 1 100%; justify-content: stretch; }
+  .vt-seg button { padding: 0 8px; }
   .vt-seg button { flex: 1; }
   .vt-hide-sm { display: none; }
   .vt-form-grid { grid-template-columns: 1fr; }
@@ -709,6 +748,14 @@ const CONFIG = {
   storageKey: 'stanmedia.video-tracker.v1',
   prefsKey: 'stanmedia.video-tracker.prefs.v1',
   deliveredWindowDays: 7,          // "Delivered this week" = approved within the last N days
+  activityLimit: 500,              // activity log entries kept
+  /* Supabase sync (optional). Leave url empty to run on localStorage only.
+     Paste your project URL and anon key here, or have the hub set
+     window.VIDEO_TRACKER_SUPABASE = { url, anonKey, accessToken } before this
+     script runs. accessToken is the logged-in user's JWT when the hub has auth;
+     without it the anon key is used and the SQL's anon policies must be on.
+     The tables come from video-tracker-supabase.sql (also in the comment in §2b). */
+  supabase: { url: '', anonKey: '', accessToken: '', pollSeconds: 30 },
   exportFilePrefix: 'video-tracker',
 };
 
@@ -746,11 +793,11 @@ const SEED_EPISODES = [
     history: [['scripted', 24], ['script_approved', 23.6], ['sent_to_client', 23.5], ['footage_uploaded', 13], ['editing', 12.5], ['waiting_approval', 6], ['client_approval', 2]],
     notes: 'Gym-floor walkthrough. Sent to Camp Fit for sign-off on Friday.',
     links: { notion: 'https://www.notion.so/', drive: 'https://drive.google.com/', video: 'https://drive.google.com/' } },
-  { clientId: 'camp-fit', number: 4, stage: 'editing',
+  { clientId: 'camp-fit', number: 4, stage: 'editing', title: 'Member story: Jess', dueIn: 3,
     history: [['scripted', 12], ['script_approved', 11.8], ['sent_to_client', 11.7], ['footage_uploaded', 4], ['editing', 3]],
     notes: 'Member story (Jess). Two takes of the why scene, use take 2.',
     links: { notion: 'https://www.notion.so/', drive: 'https://drive.google.com/', video: '' } },
-  { clientId: 'camp-fit', number: 5, stage: 'sent_to_client',
+  { clientId: 'camp-fit', number: 5, stage: 'sent_to_client', title: 'Morning class energy', dueIn: 9,
     history: [['scripted', 7], ['script_approved', 6.5], ['sent_to_client', 6.4]],
     notes: 'Morning class energy. Script sent Monday with the shot list.',
     links: { notion: 'https://www.notion.so/', drive: 'https://drive.google.com/', video: '' } },
@@ -760,7 +807,7 @@ const SEED_EPISODES = [
     history: [['scripted', 40], ['script_approved', 39], ['sent_to_client', 39], ['footage_uploaded', 30], ['editing', 29], ['waiting_approval', 22], ['client_approval', 21], ['approved', 20], ['feedback_recorded', 18]],
     notes: 'First episode. Intro to the series.',
     links: { notion: 'https://www.notion.so/', drive: 'https://drive.google.com/', video: 'https://drive.google.com/' } },
-  { clientId: 'callum', number: 2, stage: 'waiting_approval',
+  { clientId: 'callum', number: 2, stage: 'waiting_approval', title: 'Why I started', dueIn: -1,
     history: [['scripted', 16], ['script_approved', 15.5], ['sent_to_client', 15.4], ['footage_uploaded', 6], ['editing', 5.5], ['waiting_approval', 1]],
     notes: 'Rendered last night. Check the audio ducking around 0:42.',
     links: { notion: 'https://www.notion.so/', drive: 'https://drive.google.com/', video: 'https://drive.google.com/' } },
@@ -770,7 +817,7 @@ const SEED_EPISODES = [
     links: { notion: 'https://www.notion.so/', drive: '', video: '' } },
 
   // Cris
-  { clientId: 'cris', number: 1, stage: 'footage_uploaded',
+  { clientId: 'cris', number: 1, stage: 'footage_uploaded', title: 'Studio tour', dueIn: 5,
     history: [['scripted', 10], ['script_approved', 9.5], ['sent_to_client', 9.4], ['footage_uploaded', 2]],
     notes: '14 clips, 1.9GB. Footage looks clean.',
     links: { notion: 'https://www.notion.so/', drive: 'https://drive.google.com/', video: '' } },
@@ -790,7 +837,7 @@ const SEED_EPISODES = [
     notes: 'Approved in chat, email send failed (no address on file). Resend.',
     blocked: { reason: 'Email send failed, needs a working address', daysAgo: 1 },
     links: { notion: 'https://www.notion.so/', drive: '', video: '' } },
-  { clientId: 'daniel', number: 7, stage: 'scripted',
+  { clientId: 'daniel', number: 7, stage: 'scripted', dueIn: 14,
     history: [['scripted', 1.5]],
     notes: '',
     links: { notion: 'https://www.notion.so/', drive: '', video: '' } },
@@ -826,19 +873,158 @@ const Store = {
 };
 
 /* =============================================================================
+   §2b REMOTE ADAPTER (Supabase, via its REST API: no SDK, no build step)
+   -----------------------------------------------------------------------------
+   Keeps three tables in step with the local copy:
+     vt_clients(id, name, updated_at)
+     vt_episodes(id, client_id, number, title, stage, history, notes, links, blocked, due_at, created_at, updated_at)
+     vt_activity(id, at, type, episode_id, client_id, from_stage, to_stage, via, text)
+   Timestamps are epoch milliseconds (bigint) so they round-trip untouched.
+
+   How it behaves:
+   - On load, the remote copy wins. If the remote is empty, the local copy is
+     pushed up once (first run).
+   - Every local change is diffed against the last known remote state and sent
+     as upserts/deletes, serialised and retried on the next change if it fails.
+   - Every pollSeconds (and on focus) it pulls and merges: a remote row that is
+     newer than the local one replaces it; a row that vanished remotely and had
+     been synced before is removed locally. Then the UI re-renders.
+   - The Super Client Video skill writes straight to the tables, ideally through
+     the vt_set_stage() SQL function, and the poll picks it up.
+
+   SQL to run once in the Supabase SQL editor (same as video-tracker-supabase.sql):
+     create table if not exists public.vt_clients (id text primary key, name text not null, updated_at bigint not null);
+     create table if not exists public.vt_episodes (id text primary key, client_id text not null references public.vt_clients(id) on delete cascade,
+       number int not null, title text not null default '', stage text not null, history jsonb not null default '[]', notes text not null default '',
+       links jsonb not null default '{}', blocked jsonb, due_at bigint, created_at bigint not null, updated_at bigint not null, unique (client_id, number));
+     create table if not exists public.vt_activity (id text primary key, at bigint not null, type text not null, episode_id text, client_id text,
+       from_stage text, to_stage text, via text, text text not null default '');
+     -- plus RLS policies and the vt_set_stage() helper, see the .sql file.
+   ============================================================================= */
+const Remote = (() => {
+  const cfg = Object.assign({}, CONFIG.supabase, (typeof window !== 'undefined' && window.VIDEO_TRACKER_SUPABASE) || {});
+  const enabled = !!(cfg.url && cfg.anonKey);
+  const base = String(cfg.url || '').replace(/\/+$/, '');
+  const T = { clients: 'vt_clients', episodes: 'vt_episodes', activity: 'vt_activity' };
+  let status = enabled ? 'idle' : 'off';      // off | idle | syncing | ok | error
+  let lastError = '';
+  let snapshot = null;                         // what we believe the remote holds: { clients: Map, episodes: Map, activity: Set }
+  let chain = Promise.resolve();               // serialises writes
+  let queued = null;                           // latest db waiting to be flushed
+  let busy = 0;
+  const statusListeners = new Set();
+  const setStatus = (st, err = '') => { status = st; lastError = err; statusListeners.forEach((fn) => { try { fn(st, err); } catch (e) { /* ignore */ } }); };
+
+  const headers = () => ({ apikey: cfg.anonKey, Authorization: `Bearer ${cfg.accessToken || cfg.anonKey}`, 'Content-Type': 'application/json' });
+  async function rest(path, { method = 'GET', body, prefer } = {}) {
+    const res = await fetch(`${base}/rest/v1/${path}`, { method, headers: { ...headers(), ...(prefer ? { Prefer: prefer } : {}) }, body: body == null ? undefined : JSON.stringify(body) });
+    if (!res.ok) throw new Error(`${method} ${path} → ${res.status} ${(await res.text()).slice(0, 200)}`);
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
+  }
+
+  /* Row mappers: snake_case columns ↔ the in-memory shapes. */
+  const clientToRow = (c) => ({ id: c.id, name: c.name, updated_at: c.updatedAt || Date.now() });
+  const clientFromRow = (r) => ({ id: String(r.id), name: String(r.name || ''), updatedAt: Number(r.updated_at) || 0 });
+  const episodeToRow = (e) => ({ id: e.id, client_id: e.clientId, number: e.number, title: e.title || '', stage: e.stage, history: e.history, notes: e.notes || '',
+    links: e.links, blocked: e.blocked, due_at: e.dueAt, created_at: e.createdAt, updated_at: e.updatedAt });
+  const episodeFromRow = (r) => ({ id: r.id, clientId: r.client_id, number: r.number, title: r.title, stage: r.stage, history: r.history, notes: r.notes,
+    links: r.links, blocked: r.blocked, dueAt: r.due_at, createdAt: r.created_at, updatedAt: r.updated_at });
+  const activityToRow = (a) => ({ id: a.id, at: a.at, type: a.type, episode_id: a.episodeId, client_id: a.clientId, from_stage: a.from, to_stage: a.to, via: a.via, text: a.text || '' });
+  const activityFromRow = (r) => ({ id: r.id, at: r.at, type: r.type, episodeId: r.episode_id, clientId: r.client_id, from: r.from_stage, to: r.to_stage, via: r.via, text: r.text });
+
+  function remember(db) {
+    snapshot = {
+      clients: new Map(db.clients.map((c) => [c.id, JSON.stringify(clientToRow(c))])),
+      episodes: new Map(db.episodes.map((e) => [e.id, JSON.stringify(episodeToRow(e))])),
+      activity: new Set((db.activity || []).map((a) => a.id)),
+    };
+  }
+
+  /* Pulls everything. Returns a db-shaped object (unnormalised) or throws. */
+  async function pull() {
+    const [clients, episodes, activity] = await Promise.all([
+      rest(`${T.clients}?select=*`),
+      rest(`${T.episodes}?select=*`),
+      rest(`${T.activity}?select=*&order=at.desc&limit=${CONFIG.activityLimit}`),
+    ]);
+    return { version: 2, clients: clients.map(clientFromRow), episodes: episodes.map(episodeFromRow), activity: activity.map(activityFromRow).reverse() };
+  }
+
+  async function load() {
+    if (!enabled) return null;
+    setStatus('syncing');
+    try { const db = await pull(); setStatus('ok'); return db; }
+    catch (e) { setStatus('error', e.message); return null; }
+  }
+
+  /* Pushes the difference between db and the last known remote state. */
+  async function flush(db) {
+    if (!snapshot) remember({ clients: [], episodes: [], activity: [] });
+    const ups = { clients: [], episodes: [], activity: [] }, dels = { clients: [], episodes: [] };
+    for (const c of db.clients) { const row = clientToRow(c); if (snapshot.clients.get(c.id) !== JSON.stringify(row)) ups.clients.push(row); }
+    for (const e of db.episodes) { const row = episodeToRow(e); if (snapshot.episodes.get(e.id) !== JSON.stringify(row)) ups.episodes.push(row); }
+    for (const a of db.activity || []) if (!snapshot.activity.has(a.id)) ups.activity.push(activityToRow(a));
+    const liveEp = new Set(db.episodes.map((e) => e.id)), liveCl = new Set(db.clients.map((c) => c.id));
+    for (const id of snapshot.episodes.keys()) if (!liveEp.has(id)) dels.episodes.push(id);
+    for (const id of snapshot.clients.keys()) if (!liveCl.has(id)) dels.clients.push(id);
+    const total = ups.clients.length + ups.episodes.length + ups.activity.length + dels.episodes.length + dels.clients.length;
+    if (!total) return;
+    setStatus('syncing');
+    const inList = (ids) => `in.(${ids.map((id) => `"${String(id).replace(/"/g, '')}"`).join(',')})`;
+    if (ups.clients.length) await rest(T.clients, { method: 'POST', body: ups.clients, prefer: 'resolution=merge-duplicates,return=minimal' });
+    if (dels.episodes.length) await rest(`${T.episodes}?id=${inList(dels.episodes)}`, { method: 'DELETE', prefer: 'return=minimal' });
+    if (ups.episodes.length) await rest(T.episodes, { method: 'POST', body: ups.episodes, prefer: 'resolution=merge-duplicates,return=minimal' });
+    if (dels.clients.length) await rest(`${T.clients}?id=${inList(dels.clients)}`, { method: 'DELETE', prefer: 'return=minimal' });
+    if (ups.activity.length) await rest(T.activity, { method: 'POST', body: ups.activity, prefer: 'resolution=merge-duplicates,return=minimal' });
+    remember(db);
+  }
+
+  /* Debounced, serialised save. Failures keep the diff pending for the next save or poll. */
+  function save(db) {
+    if (!enabled) return;
+    queued = clone(db);
+    clearTimeout(save.timer);
+    save.timer = setTimeout(() => {
+      const snap = queued; queued = null;
+      busy++;
+      chain = chain.then(() => flush(snap)).then(() => setStatus('ok'), (e) => setStatus('error', e.message)).finally(() => { busy--; });
+    }, 300);
+  }
+
+  /* Periodic pull. onRemote(dbShaped) is called with whatever the server has; the caller merges. */
+  function startPolling(onRemote) {
+    if (!enabled) return;
+    const tick = async () => {
+      if (document.hidden || busy || queued) return;
+      try { const remote = await pull(); if (!busy && !queued) { onRemote(remote); if (status !== 'syncing') setStatus('ok'); } }
+      catch (e) { setStatus('error', e.message); }
+    };
+    setInterval(tick, Math.max(10, Number(cfg.pollSeconds) || 30) * 1000);
+    window.addEventListener('focus', tick);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+  }
+
+  function onStatus(fn) { statusListeners.add(fn); return () => statusListeners.delete(fn); }
+  return { enabled, load, save, remember, startPolling, onStatus, status: () => status, lastError: () => lastError };
+})();
+
+/* =============================================================================
    §3  DATA LAYER
    -----------------------------------------------------------------------------
    Public API (the UI only ever calls these):
      getClients()                      → Client[]
      getClient(id)                     → Client | null
      addClient(name)                   → Client
+     renameClient(id, name) / deleteClient(id)            → {ok | error}
+     getActivity(limit)                → ActivityEntry[] newest first
      getEpisodes()                     → Episode[]  (copies, never live objects)
      getEpisode(id)                    → Episode | null
      findEpisode(clientName, number)   → Episode | null
      addEpisode({clientId, number, notes, stage, links})  → {ok, episode | error}
      updateEpisodeStage(id, stageId, opts)                → {ok, changed, episode | error}
      toggleFeedbackVideo(id)                              → {ok, changed, episode | error}  (on → done, off → Approved)
-     updateEpisode(id, {title, notes, links})             → {ok, episode | error}
+     updateEpisode(id, {title, notes, links, dueAt})      → {ok, episode | error}
      setBlocked(id, reason | null)                        → {ok, episode | error}
      deleteEpisode(id)                                    → {ok, episode | error}
      restoreEpisode(snapshot)                             → {ok}   (undo)
@@ -849,7 +1035,9 @@ const Store = {
    Episode shape:
      { id, clientId, number, title, stage, history: [{stage, at, via?, back?}],
        notes, links: {notion, drive, video}, blocked: {reason, at} | null,
-       createdAt, updatedAt }   (all timestamps are epoch ms)
+       dueAt: ms | null, createdAt, updatedAt }   (all timestamps are epoch ms)
+   ActivityEntry: { id, at, type, episodeId, clientId, from, to, via, text }
+     type: 'added' | 'stage' | 'blocked' | 'unblocked' | 'due' | 'deleted' | 'restored' | 'client' | 'import'
    ============================================================================= */
 const DAY = 86400000;
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -878,12 +1066,20 @@ function buildSeed(now = Date.now()) {
       notes: e.notes || '',
       links: { notion: '', drive: '', video: '', ...(e.links || {}) },
       blocked: e.blocked ? { reason: e.blocked.reason, at: at(e.blocked.daysAgo || 0) } : null,
+      dueAt: typeof e.dueIn === 'number' ? startOfDayMs(now + e.dueIn * DAY) : null,
       createdAt: history[0].at,
       updatedAt: history[history.length - 1].at,
     };
   });
-  return { version: 1, clients: clone(SEED_CLIENTS), episodes };
+  const clients = SEED_CLIENTS.map((c) => ({ ...c, updatedAt: now }));
+  // A little history so the activity feed is not empty on first open.
+  const activity = episodes.flatMap((ep) => ep.history.map((h, i) => ({
+    id: `act_${ep.id}_${i}`, at: h.at, type: i === 0 ? 'added' : 'stage', episodeId: ep.id, clientId: ep.clientId,
+    from: i === 0 ? null : ep.history[i - 1].stage, to: h.stage, via: h.via || null, text: '',
+  }))).sort((a, b) => a.at - b.at);
+  return { version: 2, clients, episodes, activity };
 }
+const startOfDayMs = (t) => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
 
 /* Validates + repairs anything coming from storage or an import. Returns null
    if the shape is unusable. Skips episodes that cannot be repaired.            */
@@ -899,7 +1095,7 @@ function normalizeDb(raw) {
     const id = String(c.id || slug(name));
     if (seenClient.has(id)) continue;
     seenClient.add(id);
-    clients.push({ id, name });
+    clients.push({ id, name, updatedAt: Number(c.updatedAt) || now });
   }
   const episodes = [];
   const seenEp = new Set(), seenNumber = new Set();
@@ -911,7 +1107,14 @@ function normalizeDb(raw) {
     seenEp.add(ep.id); seenNumber.add(key);
     episodes.push(ep);
   }
-  return { db: { version: 1, clients, episodes }, skipped };
+  const activity = (Array.isArray(raw.activity) ? raw.activity : [])
+    .filter((a) => a && typeof a === 'object' && Number.isFinite(Number(a.at)) && typeof a.type === 'string')
+    .map((a) => ({ id: String(a.id || uid()), at: Number(a.at), type: a.type, episodeId: a.episodeId ? String(a.episodeId) : null,
+                   clientId: a.clientId ? String(a.clientId) : null, from: isStageId(a.from) ? a.from : null, to: isStageId(a.to) ? a.to : null,
+                   via: a.via ? String(a.via) : null, text: String(a.text || '') }))
+    .sort((a, b) => a.at - b.at)
+    .slice(-CONFIG.activityLimit);
+  return { db: { version: 2, clients, episodes, activity }, skipped };
 }
 
 function normalizeEpisode(raw, clientIds, now) {
@@ -942,6 +1145,7 @@ function normalizeEpisode(raw, clientIds, now) {
     notes: String(raw.notes || ''),
     links: { notion: safeUrl(links.notion), drive: safeUrl(links.drive), video: safeUrl(links.video) },
     blocked,
+    dueAt: Number.isFinite(Number(raw.dueAt)) && raw.dueAt != null ? Number(raw.dueAt) : null,
     createdAt: Number(raw.createdAt) || history[0].at,
     updatedAt: Number(raw.updatedAt) || history[history.length - 1].at,
   };
@@ -953,10 +1157,17 @@ const Data = (() => {
   let persistOk = Store.save(db);   // first save doubles as the storage probe
   const listeners = new Set();
 
-  const persist = () => { persistOk = Store.save(db); };
+  const persist = () => { persistOk = Store.save(db); Remote.save(db); };
+  let resolveReady;
+  const ready = new Promise((r) => { resolveReady = r; });
   const emit = (evt) => { listeners.forEach((fn) => { try { fn(evt); } catch (e) { console.error(e); } }); };
   const find = (id) => db.episodes.find((e) => e.id === id) || null;
   const fail = (error) => ({ ok: false, error });
+  const log = (entry) => {
+    if (!Array.isArray(db.activity)) db.activity = [];
+    db.activity.push({ id: `act_${uid()}`, at: Date.now(), episodeId: null, clientId: null, from: null, to: null, via: null, text: '', ...entry });
+    if (db.activity.length > CONFIG.activityLimit) db.activity.splice(0, db.activity.length - CONFIG.activityLimit);
+  };
 
   function getClients() { return clone(db.clients); }
   function getClient(id) { const c = db.clients.find((x) => x.id === id); return c ? clone(c) : null; }
@@ -967,11 +1178,35 @@ const Data = (() => {
     if (existing) return clone(existing);
     let id = slug(clean), n = 2;
     while (db.clients.some((c) => c.id === id)) id = `${slug(clean)}-${n++}`;
-    const client = { id, name: clean };
+    const client = { id, name: clean, updatedAt: Date.now() };
     db.clients.push(client);
+    log({ type: 'client', clientId: id, text: `${clean} added` });
     persist(); emit({ type: 'client:add', clientId: id });
     return clone(client);
   }
+  function renameClient(id, name) {
+    const c = db.clients.find((x) => x.id === id);
+    const clean = String(name || '').trim();
+    if (!c) return fail('Client not found');
+    if (!clean) return fail('Give the client a name');
+    if (db.clients.some((x) => x.id !== id && x.name.toLowerCase() === clean.toLowerCase())) return fail('Another client already has that name');
+    const was = c.name;
+    c.name = clean; c.updatedAt = Date.now();
+    log({ type: 'client', clientId: id, text: `${was} renamed to ${clean}` });
+    persist(); emit({ type: 'client:update', clientId: id });
+    return { ok: true, client: clone(c) };
+  }
+  /* Only an empty client can be deleted; episodes are removed one by one on purpose. */
+  function deleteClient(id) {
+    const i = db.clients.findIndex((x) => x.id === id);
+    if (i < 0) return fail('Client not found');
+    if (db.episodes.some((e) => e.clientId === id)) return fail('Delete or move this client\'s episodes first');
+    const [removed] = db.clients.splice(i, 1);
+    log({ type: 'client', clientId: id, text: `${removed.name} removed` });
+    persist(); emit({ type: 'client:delete', clientId: id });
+    return { ok: true, client: clone(removed) };
+  }
+  function getActivity(limit = 50) { return clone((db.activity || []).slice(-limit).reverse()); }
 
   function getEpisodes() { return clone(db.episodes); }
   function getEpisode(id) { const e = find(id); return e ? clone(e) : null; }
@@ -982,7 +1217,7 @@ const Data = (() => {
     return e ? clone(e) : null;
   }
 
-  function addEpisode({ clientId, number, notes = '', stage = 'scripted', links = {}, title = '' }) {
+  function addEpisode({ clientId, number, notes = '', stage = 'scripted', links = {}, title = '', dueAt = null }) {
     if (!db.clients.some((c) => c.id === clientId)) return fail('Unknown client');
     if (number == null || number === '') return fail('Episode number is required');
     const n = Number(number);
@@ -995,9 +1230,10 @@ const Data = (() => {
       history: [{ stage, at: now }],
       notes: String(notes || ''),
       links: { notion: safeUrl(links.notion), drive: safeUrl(links.drive), video: safeUrl(links.video) },
-      blocked: null, createdAt: now, updatedAt: now,
+      blocked: null, dueAt: Number.isFinite(Number(dueAt)) && dueAt != null ? Number(dueAt) : null, createdAt: now, updatedAt: now,
     };
     db.episodes.push(episode);
+    log({ type: 'added', episodeId: episode.id, clientId, to: stage });
     persist(); emit({ type: 'episode:add', episodeId: episode.id });
     return { ok: true, episode: clone(episode) };
   }
@@ -1013,9 +1249,11 @@ const Data = (() => {
     if (ep.stage === stageId) return { ok: true, changed: false, episode: clone(ep) };
     const now = Number(opts.at) || Date.now();
     const back = STAGE_INDEX[stageId] < STAGE_INDEX[ep.stage];
+    const from = ep.stage;
     ep.stage = stageId;
     ep.history.push({ stage: stageId, at: now, ...(opts.via ? { via: String(opts.via) } : {}), ...(back ? { back: true } : {}) });
     ep.updatedAt = now;
+    log({ type: 'stage', at: now, episodeId: id, clientId: ep.clientId, from, to: stageId, via: opts.via ? String(opts.via) : null });
     persist(); emit({ type: 'episode:stage', episodeId: id });
     return { ok: true, changed: true, episode: clone(ep) };
   }
@@ -1030,8 +1268,14 @@ const Data = (() => {
   function updateEpisode(id, patch = {}) {
     const ep = find(id);
     if (!ep) return fail('Episode not found');
-    if ('title' in patch) ep.title = String(patch.title || '');
+    if ('title' in patch) ep.title = String(patch.title || '').trim();
     if ('notes' in patch) ep.notes = String(patch.notes || '');
+    if ('dueAt' in patch) {
+      const was = ep.dueAt;
+      ep.dueAt = Number.isFinite(Number(patch.dueAt)) && patch.dueAt != null && patch.dueAt !== '' ? Number(patch.dueAt) : null;
+      if (was !== ep.dueAt) log({ type: 'due', episodeId: id, clientId: ep.clientId, text: ep.dueAt ? `due ${new Date(ep.dueAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}` : 'due date cleared' });
+    }
+    ep.updatedAt = Date.now();
     if (patch.links && typeof patch.links === 'object') {
       for (const k of ['notion', 'drive', 'video']) if (k in patch.links) ep.links[k] = safeUrl(patch.links[k]);
     }
@@ -1045,6 +1289,7 @@ const Data = (() => {
     const now = Date.now();
     ep.blocked = reason == null || String(reason).trim() === '' ? null : { reason: String(reason).trim(), at: now };
     ep.updatedAt = now;
+    log({ type: ep.blocked ? 'blocked' : 'unblocked', at: now, episodeId: id, clientId: ep.clientId, text: ep.blocked ? ep.blocked.reason : '' });
     persist(); emit({ type: 'episode:blocked', episodeId: id });
     return { ok: true, episode: clone(ep) };
   }
@@ -1053,6 +1298,7 @@ const Data = (() => {
     const i = db.episodes.findIndex((e) => e.id === id);
     if (i < 0) return fail('Episode not found');
     const [removed] = db.episodes.splice(i, 1);
+    log({ type: 'deleted', episodeId: id, clientId: removed.clientId, text: `Ep ${removed.number}` });
     persist(); emit({ type: 'episode:delete', episodeId: id });
     return { ok: true, episode: clone(removed) };
   }
@@ -1063,13 +1309,15 @@ const Data = (() => {
     if (!ep) return fail('Cannot restore');
     if (db.episodes.some((e) => e.id !== ep.id && e.clientId === ep.clientId && e.number === ep.number)) return fail('That client already has this episode number');
     const i = db.episodes.findIndex((e) => e.id === ep.id);
+    ep.updatedAt = Date.now();
     if (i >= 0) db.episodes[i] = ep; else db.episodes.push(ep);
+    log({ type: 'restored', episodeId: ep.id, clientId: ep.clientId, to: ep.stage, text: 'undo' });
     persist(); emit({ type: 'episode:restore', episodeId: ep.id });
     return { ok: true, episode: clone(ep) };
   }
 
   function exportJSON() {
-    return { app: 'stan-media-video-tracker', version: 1, exportedAt: new Date().toISOString(), clients: clone(db.clients), episodes: clone(db.episodes) };
+    return { app: 'stan-media-video-tracker', version: 2, exportedAt: new Date().toISOString(), clients: clone(db.clients), episodes: clone(db.episodes), activity: clone(db.activity || []) };
   }
   /* Validates an import without applying it, so the UI can confirm first. */
   function previewImport(obj) {
@@ -1081,6 +1329,7 @@ const Data = (() => {
     const result = normalizeDb(obj);
     if (!result) return fail('That file is not a Video Tracker export');
     db = result.db;
+    log({ type: 'import', text: `${db.episodes.length} episodes imported` });
     persist(); emit({ type: 'db:replace' });
     return { ok: true, skipped: result.skipped, clients: db.clients.length, episodes: db.episodes.length };
   }
@@ -1089,9 +1338,56 @@ const Data = (() => {
   function onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); }
   function storageOk() { return persistOk; }
 
-  return { getClients, getClient, addClient, getEpisodes, getEpisode, findEpisode, addEpisode, updateEpisodeStage,
-           toggleFeedbackVideo, updateEpisode, setBlocked, deleteEpisode, restoreEpisode, exportJSON, previewImport,
-           importJSON, resetToSeed, onChange, storageOk };
+  /* Remote sync: first load, then periodic merges. Local stays the working copy. */
+  function takeRemote(remoteRaw) {
+    const r = normalizeDb(remoteRaw);
+    if (!r) return false;
+    db = r.db; Store.save(db); Remote.remember(db);
+    return true;
+  }
+  function mergeRemote(remoteRaw) {
+    const r = normalizeDb(remoteRaw);
+    if (!r) return;
+    const remote = r.db;
+    let changed = false;
+    const localEp = new Map(db.episodes.map((e) => [e.id, e]));
+    const localCl = new Map(db.clients.map((c) => [c.id, c]));
+    for (const c of remote.clients) { const mine = localCl.get(c.id); if (!mine) { db.clients.push(c); changed = true; } else if (c.updatedAt > mine.updatedAt) { Object.assign(mine, c); changed = true; } }
+    for (const e of remote.episodes) { const mine = localEp.get(e.id); if (!mine) { db.episodes.push(e); changed = true; } else if (e.updatedAt > mine.updatedAt) { Object.assign(mine, e); changed = true; } }
+    const remoteEp = new Set(remote.episodes.map((e) => e.id)), remoteCl = new Set(remote.clients.map((c) => c.id));
+    // Rows that were synced before but are gone remotely were deleted elsewhere.
+    const synced = Remote.status() !== 'idle';
+    if (synced) {
+      const beforeE = db.episodes.length, beforeC = db.clients.length;
+      db.episodes = db.episodes.filter((e) => remoteEp.has(e.id) || e.updatedAt > Date.now() - 60000);
+      db.clients = db.clients.filter((c) => remoteCl.has(c.id) || db.episodes.some((e) => e.clientId === c.id) || c.updatedAt > Date.now() - 60000);
+      if (db.episodes.length !== beforeE || db.clients.length !== beforeC) changed = true;
+    }
+    const seen = new Set((db.activity || []).map((a) => a.id));
+    for (const a of remote.activity) if (!seen.has(a.id)) { db.activity.push(a); changed = true; }
+    if (changed) {
+      db.activity.sort((a, b) => a.at - b.at);
+      if (db.activity.length > CONFIG.activityLimit) db.activity.splice(0, db.activity.length - CONFIG.activityLimit);
+      Store.save(db); Remote.remember(db);
+      emit({ type: 'db:sync' });
+    }
+  }
+  (async () => {
+    if (Remote.enabled) {
+      const remote = await Remote.load();
+      if (remote) {
+        const empty = !remote.clients.length && !remote.episodes.length;
+        if (empty) { Remote.save(db); }                         // first run: seed the remote with what we have
+        else if (takeRemote(remote)) emit({ type: 'db:replace', quiet: true });
+      }
+      Remote.startPolling(mergeRemote);
+    }
+    resolveReady(true);
+  })();
+
+  return { getClients, getClient, addClient, renameClient, deleteClient, getEpisodes, getEpisode, findEpisode, addEpisode,
+           updateEpisodeStage, toggleFeedbackVideo, updateEpisode, setBlocked, deleteEpisode, restoreEpisode, getActivity,
+           exportJSON, previewImport, importJSON, resetToSeed, onChange, storageOk, ready, remote: Remote };
 })();
 
 /* =============================================================================
@@ -1124,7 +1420,8 @@ function syncFromSuperClientVideo(episodeId, newStage) {
    ============================================================================= */
 const ui = {
   root: null,
-  view: 'overview',            // 'overview' | 'board'
+  view: 'overview',            // 'overview' | 'board' | 'clients'
+  activityExpanded: false,
   search: '',
   clientFilter: 'all',
   stageFilter: 'all',          // stage id | 'all' | 'blocked'
@@ -1152,6 +1449,30 @@ const daysSince = (ts) => Math.max(0, Math.round((startOfDay(Date.now()) - start
 const progressPct = (ep) => Math.round((STAGE_INDEX[ep.stage] / (STAGES.length - 1)) * 100);
 const epName = (ep, client) => `${client ? client.name : 'Unknown'} · Ep ${ep.number}`;
 const epWord = (n) => (n === 1 ? 'episode' : 'episodes');
+/* Due-date presentation: how far away, and whether it should shout. */
+function dueInfo(ep) {
+  if (!ep.dueAt) return null;
+  const days = Math.round((startOfDayMs(ep.dueAt) - startOfDayMs(Date.now())) / DAY);
+  const done = ep.stage === FINAL_STAGE;
+  let label;
+  if (days < 0) label = `${-days}d overdue`;
+  else if (days === 0) label = 'Due today';
+  else if (days === 1) label = 'Due tomorrow';
+  else if (days <= 6) label = `Due in ${days}d`;
+  else label = `Due ${fmtDate(ep.dueAt)}`;
+  return { days, label, state: done ? '' : days < 0 ? 'is-overdue' : days <= 2 ? 'is-soon' : '' };
+}
+const dueChip = (ep) => { const d = dueInfo(ep); return d ? `<span class="vt-due ${d.state}">${ICONS.clock}${esc(d.label)}</span>` : ''; };
+const toDateInput = (ms) => { if (!ms) return ''; const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const fromDateInput = (v) => { if (!v) return null; const [y, m, d] = v.split('-').map(Number); return new Date(y, m - 1, d).getTime(); };
+function fmtTimeAgo(ts) {
+  const mins = Math.round((Date.now() - ts) / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const h = Math.round(mins / 60);
+  if (h < 24) return `${h}h ago`;
+  return fmtRelative(ts);
+}
 
 function fmtDays(n, { suffix = '' } = {}) {
   if (n === 0) return 'Today';
@@ -1196,6 +1517,9 @@ const ICONS = {
   download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0 4-4m-4 4-4-4M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg>',
   upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4m0 0 4 4m-4-4-4 4M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg>',
   back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5m0 0 6-6m-6 6 6 6"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4l10-10a2.8 2.8 0 0 0-4-4L4 16v4Z"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
   fwd: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m0 0-6-6m6 6-6 6"/></svg>',
 };
 
@@ -1226,11 +1550,12 @@ function renderShell(root) {
       <header class="vt-topbar vt-glass">
         <div class="vt-brand">
           <span class="vt-brand-mark" aria-hidden="true"></span>
-          <div><strong>Video Tracker</strong><span>Stan Media · internal</span></div>
+          <div><strong>Video Tracker</strong><span id="vt-sync" aria-live="polite">Stan Media · internal</span></div>
         </div>
         <nav class="vt-seg" aria-label="Views">
           <button type="button" data-view="overview" aria-current="page">Overview</button>
           <button type="button" data-view="board">Pipeline</button>
+          <button type="button" data-view="clients">Clients</button>
         </nav>
         <div class="vt-actions">
           <button type="button" class="vt-btn vt-btn-icon" id="vt-theme" aria-label="Dark mode" aria-pressed="false" title="Toggle dark mode">${ICONS.moon}</button>
@@ -1327,8 +1652,9 @@ function renderOverview(view) {
           <span class="vt-dot" style="--c:${ep.blocked ? 'var(--vt-blocked)' : stageColor(ep.stage)}"></span>
           <span class="vt-row-main">
             <span class="vt-row-title">${esc(action)}</span>
-            <span class="vt-row-meta">${esc(client.name)} · Ep ${ep.number} · ${esc(s.label)}</span>
+            <span class="vt-row-meta">${esc(client.name)} · Ep ${ep.number}${ep.title ? ` · ${esc(ep.title)}` : ''} · ${esc(s.label)}</span>
           </span>
+          ${dueChip(ep)}
           <span class="vt-row-days" aria-hidden="true">${esc(fmtDaysShort(d))}</span>
         </button>
       </li>`;
@@ -1371,6 +1697,7 @@ function renderOverview(view) {
       ` : `<div class="vt-empty">Nothing is waiting on you right now.</div>`}
       <div class="vt-panel-foot"><button type="button" class="vt-btn vt-btn-ghost" data-view="board">All ${all.length} ${epWord(all.length)} on the board${ICONS.chev}</button></div>
     </section>
+    ${renderActivityPanel(animate)}
     ${Data.storageOk() ? '' : '<p class="vt-storage-note">Storage is unavailable in this browser, so changes will not be kept.</p>'}`;
 
   // Let the progress fills animate in from zero, and count the numbers up on first show.
@@ -1413,6 +1740,7 @@ function renderBoard(view) {
               </button>
               <span class="vt-card-meta">
                 <span>${esc(days === 0 ? 'Moved today' : fmtDays(days, { suffix: ' in stage' }))}</span>
+                ${dueChip(ep)}
                 ${ep.blocked ? `<span class="vt-pill vt-pill-blocked" title="${esc(ep.blocked.reason)}">${ICONS.flag}Blocked</span>` : ''}
               </span>
             </div>
@@ -1450,6 +1778,91 @@ function renderBoard(view) {
   requestAnimationFrame(() => $$('.vt-card-bar > span[data-width]', view).forEach((b) => { b.style.width = b.dataset.width; }));
 
   if (!reducedMotion() && before.map.size) playFlip(view, before.map);
+}
+
+/* =============================================================================
+   §8b RENDER: CLIENTS
+   ============================================================================= */
+function renderClients(view) {
+  const items = visibleEpisodes();
+  const animate = ui.lastRenderedView !== 'clients';
+  const since = Date.now() - 30 * DAY;
+  const cards = Data.getClients().map((client, i) => {
+    const eps = items.filter((x) => x.ep.clientId === client.id).map((x) => x.ep).sort((a, b) => b.number - a.number);
+    if (!eps.length && filtersActive() && ui.clientFilter !== client.id) return '';
+    const counts = STAGES.map((s) => eps.filter((e) => e.stage === s.id).length);
+    const open = eps.filter((e) => e.stage !== FINAL_STAGE).length;
+    const delivered = eps.filter((e) => e.history.some((h) => h.stage === STAGE_BEFORE_FINAL && !h.back && h.at >= since)).length;
+    const blocked = eps.filter((e) => e.blocked).length;
+    const overdue = eps.filter((e) => { const d = dueInfo(e); return d && d.state === 'is-overdue'; }).length;
+    return `
+      <section class="vt-glass vt-client ${animate ? 'vt-fade-in' : ''}" style="--i:${i}" aria-label="${esc(client.name)}">
+        <div class="vt-client-head">
+          <h2>${esc(client.name)}</h2>
+          <button type="button" class="vt-icon-btn" data-client-rename="${esc(client.id)}" aria-label="Rename ${esc(client.name)}">${ICONS.edit}</button>
+          ${eps.length ? '' : `<button type="button" class="vt-icon-btn" data-client-delete="${esc(client.id)}" aria-label="Remove ${esc(client.name)}">${ICONS.trash}</button>`}
+        </div>
+        <div class="vt-client-meta">
+          <span>${open} in flight</span><span>${delivered} delivered in 30 days</span>
+          ${blocked ? `<span class="vt-pill vt-pill-blocked">${blocked} blocked</span>` : ''}
+          ${overdue ? `<span class="vt-due is-overdue">${ICONS.clock}${overdue} overdue</span>` : ''}
+        </div>
+        <div class="vt-mini-pipe" aria-label="Episodes by stage" title="${STAGES.map((s, k) => `${s.label}: ${counts[k]}`).join('\n')}" style="margin-top:14px">
+          ${STAGES.map((s, k) => `<span class="${counts[k] ? 'has' : ''}" style="--c:${stageColor(s.id)}">${counts[k] ? `<b>${counts[k]}</b>` : ''}</span>`).join('')}
+        </div>
+        <ul class="vt-client-eps">
+          ${eps.length ? eps.map((ep) => `
+            <li><button type="button" class="vt-row" data-open="${esc(ep.id)}">
+              <span class="vt-dot" style="--c:${ep.blocked ? 'var(--vt-blocked)' : stageColor(ep.stage)}"></span>
+              <span class="vt-row-main">
+                <span class="vt-row-title">Ep ${ep.number}${ep.title ? ` · ${esc(ep.title)}` : ''}</span>
+                <span class="vt-row-meta">${esc(stageOf(ep).label)}${ep.blocked ? ' · blocked' : ''}</span>
+              </span>
+              ${dueChip(ep)}
+              <span class="vt-row-days" aria-hidden="true">${esc(fmtDaysShort(daysSince(stageEnteredAt(ep))))}</span>
+            </button></li>`).join('') : '<li class="vt-empty">No episodes yet</li>'}
+        </ul>
+        <div class="vt-client-foot">
+          <button type="button" class="vt-btn vt-btn-ghost" data-client-add="${esc(client.id)}">${ICONS.plus}Episode</button>
+        </div>
+      </section>`;
+  }).join('');
+  view.innerHTML = `
+    <h1 class="vt-sr">Clients</h1>
+    <div class="vt-client-grid">${cards || '<div class="vt-empty">No clients yet. Add an episode to create one.</div>'}</div>`;
+}
+
+/* The activity feed: every move, flag, add and delete, newest first. */
+function activityLine(a) {
+  const ep = a.episodeId ? Data.getEpisode(a.episodeId) : null;
+  const client = a.clientId ? Data.getClient(a.clientId) : null;
+  const who = ep && client ? `<b>${esc(client.name)} · Ep ${ep.number}</b>` : client ? `<b>${esc(client.name)}</b>` : a.episodeId ? '<b>An episode</b>' : '';
+  const stage = (id) => (isStageId(id) ? STAGES[STAGE_INDEX[id]].label : '');
+  let text;
+  switch (a.type) {
+    case 'stage': text = `${who} moved to ${esc(stage(a.to))}`; break;
+    case 'added': text = `${who} added${a.to && a.to !== 'scripted' ? ` at ${esc(stage(a.to))}` : ''}`; break;
+    case 'blocked': text = `${who} flagged: ${esc(a.text)}`; break;
+    case 'unblocked': text = `${who} flag cleared`; break;
+    case 'due': text = `${who} ${esc(a.text)}`; break;
+    case 'deleted': text = `${client ? `<b>${esc(client.name)} · ${esc(a.text)}</b>` : '<b>An episode</b>'} deleted`; break;
+    case 'restored': text = `${who} restored`; break;
+    case 'client': text = esc(a.text); break;
+    case 'import': text = esc(a.text); break;
+    default: text = esc(a.text || a.type);
+  }
+  const color = a.to ? stageColor(a.to) : a.type === 'blocked' ? 'var(--vt-blocked)' : 'var(--vt-ink-3)';
+  return `<li class="vt-act"><span class="vt-dot" style="--c:${color}"></span><span>${text}${a.via ? ' <span class="vt-pill" style="--c:var(--vt-accent)">synced</span>' : ''}</span><time datetime="${new Date(a.at).toISOString()}" title="${esc(fmtDateTime(a.at))}">${esc(fmtTimeAgo(a.at))}</time></li>`;
+}
+function renderActivityPanel(animate) {
+  const all = Data.getActivity(ui.activityExpanded ? 60 : 8);
+  const total = Data.getActivity(CONFIG.activityLimit).length;
+  return `
+    <section class="vt-glass vt-panel ${animate ? 'vt-fade-in' : ''}" style="--i:7" aria-labelledby="vt-activity-title">
+      <div class="vt-panel-head"><h2 id="vt-activity-title">Activity</h2><span class="vt-count">${total}</span></div>
+      ${all.length ? `<ul>${all.map(activityLine).join('')}</ul>` : '<div class="vt-empty">Nothing has happened yet.</div>'}
+      ${total > 8 ? `<div class="vt-panel-foot"><button type="button" class="vt-btn vt-btn-ghost" data-action="toggle-activity">${ui.activityExpanded ? 'Show less' : `Show more`}</button></div>` : ''}
+    </section>`;
 }
 
 /* Counts a number up from 0 with an ease-out curve. */
@@ -1602,6 +2015,10 @@ function flushSheetEdits() {
   const patch = {};
   const notes = $('[data-field="notes"]', sheet);
   if (notes && notes.value !== String(ep.notes).replace(/\r\n?/g, '\n')) patch.notes = notes.value;
+  const title = $('[data-field="title"]', sheet);
+  if (title && title.value.trim() !== ep.title) patch.title = title.value;
+  const due = $('[data-field="dueAt"]', sheet);
+  if (due && fromDateInput(due.value) !== ep.dueAt) patch.dueAt = fromDateInput(due.value);
   const links = {};
   $$('[data-link]', sheet).forEach((input) => { if (input.value.trim() !== ep.links[input.dataset.link]) links[input.dataset.link] = input.value; });
   if (Object.keys(links).length) patch.links = links;
@@ -1689,6 +2106,12 @@ function renderSheet() {
         <button type="button" class="vt-btn" data-act="back" ${idx === 0 ? 'disabled' : ''} aria-label="Move back to ${idx > 0 ? esc(STAGES[idx - 1].label) : 'previous stage'}">${ICONS.back}Back</button>
         <button type="button" class="vt-btn vt-btn-primary" data-act="forward" ${idx >= STAGES.length - 1 ? 'disabled' : ''} aria-label="Move forward to ${idx < STAGES.length - 1 ? esc(STAGES[idx + 1].label) : 'next stage'}">${idx < STAGES.length - 1 ? 'Next: ' + esc(STAGES[idx + 1].short) : 'Done'}${ICONS.fwd}</button>
       </div>
+
+      <div class="vt-details">
+        <label><span class="vt-label">Title</span><input class="vt-field" type="text" data-field="title" value="${esc(ep.title)}" placeholder="What this episode is about" maxlength="80"></label>
+        <label><span class="vt-label">Due</span><input class="vt-field" type="date" data-field="dueAt" value="${toDateInput(ep.dueAt)}"></label>
+      </div>
+      ${(() => { const d = dueInfo(ep); return d && d.state ? `<div class="vt-due ${d.state}" style="margin-top:-12px">${ICONS.clock}${esc(d.label)}</div>` : ''; })()}
 
       <label class="vt-tick">
         <input type="checkbox" data-act="tick" ${isFinal ? 'checked' : ''} aria-describedby="vt-tick-help">
@@ -1800,7 +2223,7 @@ function bindSheet() {
   });
 
   sheet.addEventListener('input', (e) => {
-    if (!e.target.matches('[data-field="notes"]')) return;
+    if (!e.target.matches('[data-field]')) return;
     clearTimeout(sheetSaveTimer);
     sheetSaveTimer = setTimeout(flushSheetEdits, 350);
   });
@@ -1919,10 +2342,11 @@ function bindMoveMenu() {
 /* =============================================================================
    §11  DIALOGS: new episode, confirm
    ============================================================================= */
-function openNewEpisodeDialog() {
+function openNewEpisodeDialog(prefClientId = null) {
   const dlg = $('#vt-new-dialog', ui.root);
   const clients = Data.getClients();
-  const preselect = ui.clientFilter !== 'all' && clients.some((c) => c.id === ui.clientFilter) ? ui.clientFilter : (clients[0] && clients[0].id) || '__new';
+  const wanted = prefClientId || ui.clientFilter;
+  const preselect = wanted !== 'all' && clients.some((c) => c.id === wanted) ? wanted : (clients[0] && clients[0].id) || '__new';
   const nextNumber = (clientId) => Math.max(0, ...Data.getEpisodes().filter((e) => e.clientId === clientId).map((e) => e.number)) + 1;
 
   dlg.innerHTML = `
@@ -1947,6 +2371,10 @@ function openNewEpisodeDialog() {
           ${STAGES.map((s) => `<option value="${s.id}">${esc(s.label)}</option>`).join('')}
         </select>${ICONS.down}</span>
       </label>
+      <div class="vt-form-grid">
+        <label><span class="vt-label">Title <span class="vt-muted">(optional)</span></span><input class="vt-field" name="title" placeholder="What it is about" maxlength="80" autocomplete="off"></label>
+        <label><span class="vt-label">Due <span class="vt-muted">(optional)</span></span><input class="vt-field" type="date" name="dueAt"></label>
+      </div>
       <label><span class="vt-label">Notes <span class="vt-muted">(optional)</span></span>
         <textarea class="vt-field" name="notes" placeholder="Topic, angle, anything useful" style="min-height:72px"></textarea>
       </label>
@@ -1981,7 +2409,7 @@ function openNewEpisodeDialog() {
       if (existing && Data.getEpisodes().some((ep) => ep.clientId === existing.id && ep.number === number)) { err.textContent = 'That client already has this episode number.'; numberInput.focus(); return; }
     }
     if (newName) clientId = Data.addClient(newName).id;
-    const res = Data.addEpisode({ clientId, number, notes: form.elements.notes.value, stage: form.elements.stage.value });
+    const res = Data.addEpisode({ clientId, number, notes: form.elements.notes.value, stage: form.elements.stage.value, title: form.elements.title.value, dueAt: fromDateInput(form.elements.dueAt.value) });
     if (!res.ok) { err.textContent = res.error + '.'; numberInput.focus(); return; }
     dlg.close();
     const client = Data.getClient(clientId);
@@ -1989,6 +2417,30 @@ function openNewEpisodeDialog() {
   });
   dlg.showModal();
   (preselect === '__new' ? form.elements.clientName : numberInput).focus();
+}
+
+/* A one-field prompt in the same glass dialog. Resolves with the text, or null on cancel. */
+function inputDialog({ title, label, value = '', okLabel = 'Save', placeholder = '' }) {
+  const dlg = $('#vt-confirm', ui.root);
+  return new Promise((resolve) => {
+    dlg.innerHTML = `
+      <form method="dialog" novalidate>
+        <h2 id="vt-confirm-title">${esc(title)}</h2>
+        <label><span class="vt-label">${esc(label)}</span><input class="vt-field" name="value" value="${esc(value)}" placeholder="${esc(placeholder)}" maxlength="60" autocomplete="off"></label>
+        <div class="vt-dialog-actions">
+          <button type="button" class="vt-btn vt-btn-ghost" data-cancel>Cancel</button>
+          <button type="submit" class="vt-btn vt-btn-primary">${esc(okLabel)}</button>
+        </div>
+      </form>`;
+    let settled = false;
+    const finish = (v) => { if (settled) return; settled = true; resolve(v); if (dlg.open) dlg.close(); };
+    const form = $('form', dlg);
+    form.addEventListener('submit', (e) => { e.preventDefault(); finish(form.elements.value.value); });
+    $('[data-cancel]', dlg).addEventListener('click', () => finish(null));
+    dlg.addEventListener('close', () => finish(null), { once: true });
+    dlg.showModal();
+    form.elements.value.focus(); form.elements.value.select();
+  });
 }
 
 function confirmDialog({ title, body, okLabel = 'OK', cancelLabel = 'Cancel', danger = false }) {
@@ -2121,7 +2573,7 @@ function importDataFromFile(file) {
 function render() {
   const view = $('#vt-view', ui.root);
   const focusKey = captureFocus(view);
-  if (ui.view === 'board') renderBoard(view); else renderOverview(view);
+  if (ui.view === 'board') renderBoard(view); else if (ui.view === 'clients') renderClients(view); else renderOverview(view);
   ui.lastRenderedView = ui.view;
   syncToolbar();
   restoreFocus(view, focusKey);
@@ -2146,11 +2598,17 @@ function setView(name) {
 }
 
 function onDataChange(evt) {
-  if (evt.type === 'db:replace') { ui.clientFilter = 'all'; discardSheetEdits(); closeSheet(); clearToasts(); }   // the new data is authoritative: no stale edits or Undo
+  if (evt.type === 'db:replace' && !evt.quiet) { ui.clientFilter = 'all'; discardSheetEdits(); closeSheet(); clearToasts(); }   // the new data is authoritative: no stale edits or Undo
+  if (evt.type === 'db:replace' && evt.quiet) { discardSheetEdits(); closeSheet(); }
   renderClientChips();          // counts on the chips change with almost every event
   render();
   if (ui.openEpisodeId && evt.type !== 'episode:meta') {
     if (Data.getEpisode(ui.openEpisodeId)) renderSheet(); else closeSheet();
+  } else if (ui.openEpisodeId && evt.episodeId === ui.openEpisodeId) {
+    // Meta edits (title, notes, links, due) keep the sheet as is, but the header title follows the title field.
+    const ep = Data.getEpisode(ui.openEpisodeId);
+    const h = $('#vt-sheet-title', ui.root);
+    if (ep && h) h.innerHTML = `Episode ${ep.number}${ep.title ? ` <span class="vt-muted" style="font-size:var(--vt-fs-body);font-weight:500">${esc(ep.title)}</span>` : ''}`;
   }
   if (!Data.storageOk() && !ui.storageWarned) {
     ui.storageWarned = true;
@@ -2188,7 +2646,7 @@ function bindEvents() {
 
   // Header actions
   $('#vt-theme', root).addEventListener('click', toggleTheme);
-  $('#vt-new', root).addEventListener('click', openNewEpisodeDialog);
+  $('#vt-new', root).addEventListener('click', () => openNewEpisodeDialog());
   $('#vt-more', root).addEventListener('click', (e) => openMoreMenu(e.currentTarget));
   $('#vt-import-file', root).addEventListener('change', (e) => { importDataFromFile(e.target.files[0]); e.target.value = ''; });
 
@@ -2204,6 +2662,27 @@ function bindEvents() {
     if (goView) { setView(goView.dataset.view); return; }
     const action = e.target.closest('[data-action]');
     if (action && action.dataset.action === 'reset-seed') resetSampleData();
+    if (action && action.dataset.action === 'toggle-activity') { ui.activityExpanded = !ui.activityExpanded; render(); return; }
+    const add = e.target.closest('[data-client-add]');
+    if (add) { openNewEpisodeDialog(add.dataset.clientAdd); return; }
+    const rename = e.target.closest('[data-client-rename]');
+    if (rename) {
+      const c = Data.getClient(rename.dataset.clientRename);
+      if (!c) return;
+      inputDialog({ title: 'Rename client', label: 'Name', value: c.name }).then((name) => {
+        if (name == null) return;
+        const r = Data.renameClient(c.id, name);
+        toast(r.ok ? `Renamed to ${r.client.name}` : r.error, { kind: r.ok ? 'info' : 'warn' });
+      });
+      return;
+    }
+    const del = e.target.closest('[data-client-delete]');
+    if (del) {
+      const c = Data.getClient(del.dataset.clientDelete);
+      if (!c) return;
+      confirmDialog({ title: `Remove ${c.name}?`, body: 'They have no episodes, so nothing else is lost.', okLabel: 'Remove', danger: true })
+        .then((ok) => { if (!ok) return; const r = Data.deleteClient(c.id); toast(r.ok ? `${c.name} removed` : r.error, { kind: r.ok ? 'info' : 'warn' }); });
+    }
   });
   bindDragAndDrop(view);
   bindSheet();
@@ -2234,6 +2713,12 @@ function mount(root) {
   renderClientChips();
   bindEvents();
   Data.onChange(onDataChange);
+  const syncEl = $('#vt-sync', root);
+  const showSync = (st, err) => {
+    const label = { off: 'Stan Media · internal', idle: 'Stan Media · connecting…', syncing: 'Stan Media · syncing…', ok: 'Stan Media · synced', error: 'Stan Media · offline, saved here' }[st] || 'Stan Media';
+    syncEl.textContent = label; syncEl.title = err || ''; syncEl.dataset.state = st;
+  };
+  showSync(Data.remote.status()); Data.remote.onStatus(showSync);
   try {
     render();
   } catch (err) {
