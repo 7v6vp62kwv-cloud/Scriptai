@@ -372,12 +372,11 @@ body { margin: 0; min-height: 100vh; background: var(--vt-bg); -webkit-text-size
 .vt-filtered-note { font-size: var(--vt-fs-small); color: var(--vt-accent); font-weight: 500; }
 
 .vt-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
-.vt-stat { padding: 16px 18px 14px; display: flex; flex-direction: column; gap: 4px; min-height: 118px;
+.vt-stat { padding: 14px 16px 12px; display: flex; flex-direction: column; gap: 4px;
   transition: transform var(--vt-med) var(--vt-ease), box-shadow var(--vt-med) var(--vt-ease); }
 .vt-stat:hover { transform: translateY(-2px); box-shadow: var(--vt-shadow-2), inset 0 1px 0 var(--vt-glass-highlight); }
 .vt-stat-label { font-size: var(--vt-fs-small); font-weight: 500; color: var(--vt-ink-2); display: flex; align-items: center; gap: 7px; }
 .vt-stat-num { font-size: var(--vt-fs-h); font-weight: 700; letter-spacing: -0.03em; line-height: 1; margin-top: 4px; }
-.vt-stat-sub { font-size: var(--vt-fs-small); color: var(--vt-ink-3); margin-top: auto; }
 .vt-bar { height: 4px; border-radius: var(--vt-r-bar); background: var(--vt-hairline); overflow: hidden; margin-top: 10px; }
 .vt-bar > span { display: block; height: 100%; border-radius: var(--vt-r-bar); background: var(--c, var(--vt-accent)); width: 0; transition: width var(--vt-slow) var(--vt-ease); }
 
@@ -399,12 +398,12 @@ body { margin: 0; min-height: 100vh; background: var(--vt-bg); -webkit-text-size
 .vt-row:active { transform: scale(0.995); }
 .vt-row-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 .vt-row-title { font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.vt-row-title b { font-weight: 600; color: var(--vt-ink-2); margin-left: 6px; }
 .vt-row-meta { font-size: var(--vt-fs-small); color: var(--vt-ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.vt-row-right { font-size: var(--vt-fs-small); color: var(--vt-ink-3); white-space: nowrap; text-align: right; }
-.vt-row-right strong { display: block; color: var(--vt-ink-2); font-weight: 600; }
-.vt-row-sub { display: block; }
-.vt-row svg.vt-chev { width: 14px; height: 14px; color: var(--vt-ink-3); flex: none; }
+.vt-row-days { font-size: var(--vt-fs-small); color: var(--vt-ink-3); white-space: nowrap; font-variant-numeric: tabular-nums; min-width: 28px; text-align: right; }
+.vt-group { padding: 10px 12px 4px; font-size: var(--vt-fs-small); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--vt-ink-3); display: flex; align-items: center; gap: 8px; }
+.vt-group.is-blocked { color: var(--vt-ink-2); }
+.vt-group svg { width: 12px; height: 12px; color: var(--vt-blocked); }
+.vt-panel-foot { padding: 6px 8px 4px; display: flex; justify-content: center; }
 
 .vt-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c, var(--vt-ink-3)); flex: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--c, var(--vt-ink-3)) 22%, transparent); }
 .vt-pill {
@@ -415,22 +414,7 @@ body { margin: 0; min-height: 100vh; background: var(--vt-bg); -webkit-text-size
 .vt-pill-blocked { --c: var(--vt-blocked); background: var(--vt-warn-soft); color: var(--vt-ink); }
 .vt-pill-blocked svg { width: 12px; height: 12px; }
 
-.vt-clients { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
-.vt-client-card { padding: 6px 6px 8px; }
-.vt-client-card .vt-panel-head { padding: 10px 12px 6px; }
-.vt-mini {
-  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
-  padding: 8px 10px; border: 0; border-radius: var(--vt-r-sm); background: transparent; color: var(--vt-ink);
-  transition: background var(--vt-fast);
-}
-.vt-mini:hover { background: var(--vt-glass-strong); }
-.vt-mini b { font-weight: 600; min-width: 42px; }
-.vt-mini .vt-mini-stage { flex: 1; color: var(--vt-ink-2); font-size: var(--vt-fs-small); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.vt-mini .vt-muted { white-space: nowrap; }
-
-.vt-foot { display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; padding: 10px 0 0; color: var(--vt-ink-3); font-size: var(--vt-fs-small); }
-.vt-foot button { border: 0; background: none; color: var(--vt-ink-3); text-decoration: underline; text-underline-offset: 3px; padding: 2px 4px; font-size: inherit; }
-.vt-foot button:hover { color: var(--vt-ink); }
+.vt-storage-note { text-align: center; color: var(--vt-warn); font-size: var(--vt-fs-small); }
 
 /* ----- 7. Pipeline board ------------------------------------------------- */
 .vt-board-wrap { margin: 0 calc(-1 * var(--vt-gutter)); padding: 4px var(--vt-gutter) 14px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scroll-padding: var(--vt-gutter); -webkit-overflow-scrolling: touch; }
@@ -568,6 +552,8 @@ select.vt-field { appearance: none; -webkit-appearance: none; padding-right: 36p
 .vt-menu-item[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
 .vt-menu-item .vt-muted { margin-left: auto; }
 .vt-menu-item svg { width: 14px; height: 14px; margin-left: auto; color: var(--vt-ink-2); }
+.vt-menu-item[data-more] svg { margin-left: 0; width: 16px; height: 16px; }
+.vt-menu-item svg.vt-flag { margin: 0; }
 
 .vt-dialog { position: fixed; border: 1px solid var(--vt-glass-border); padding: 0; width: min(480px, calc(100vw - 32px)); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); border-radius: var(--vt-r-xl); color: var(--vt-ink); box-shadow: var(--vt-shadow-3), inset 0 1px 0 var(--vt-glass-highlight); }
 .vt-dialog::backdrop { background: var(--vt-scrim, rgba(20,24,50,.18)); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
@@ -611,7 +597,10 @@ select.vt-field { appearance: none; -webkit-appearance: none; padding-right: 36p
   .vt-sheet-head { padding-top: max(20px, env(safe-area-inset-top)); }
   .vt-sheet-body { padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
   .vt-hero { padding-top: 4px; }
-  .vt-row-right .vt-row-sub, .vt-panel-head .vt-muted { display: none; }
+  .vt-panel-head .vt-muted { display: none; }
+  .vt-chips { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex: 1 1 100%; padding-bottom: 2px; }
+  .vt-chips::-webkit-scrollbar { display: none; }
+  .vt-chip { flex: none; }
   .vt-toasts { bottom: calc(14px + env(safe-area-inset-bottom)); }
 }
 
@@ -673,7 +662,7 @@ const STAGES = [
   { id: 'script_approved',   label: 'Script approved',         short: 'Approved ✓',    waitingOn: 'me',     nextAction: 'Send it to the client' },
   { id: 'sent_to_client',    label: 'Sent to client',          short: 'Sent',          waitingOn: 'client', nextAction: 'Waiting for footage' },
   { id: 'footage_uploaded',  label: 'Footage uploaded',        short: 'Footage in',    waitingOn: 'me',     nextAction: 'Start the edit' },
-  { id: 'editing',           label: 'Editing',                 short: 'Editing',       waitingOn: 'me',     nextAction: 'Finish the edit' },
+  { id: 'editing',           label: 'Editing',                 short: 'Editing',       waitingOn: 'none',   nextAction: 'Edit in progress' },
   { id: 'waiting_approval',  label: 'Waiting for approval',    short: 'Review',        waitingOn: 'me',     nextAction: 'Review the video' },
   { id: 'approved',          label: 'Approved',                short: 'Approved',      waitingOn: 'me',     nextAction: 'Record the feedback video' },
   { id: 'feedback_recorded', label: 'Feedback video recorded', short: 'Done',          waitingOn: 'none',   nextAction: 'Done' },
@@ -1193,8 +1182,7 @@ function renderShell(root) {
         </nav>
         <div class="vt-actions">
           <button type="button" class="vt-btn vt-btn-icon" id="vt-theme" aria-label="Dark mode" aria-pressed="false" title="Toggle dark mode">${ICONS.moon}</button>
-          <button type="button" class="vt-btn" id="vt-export" title="Download all data as JSON">${ICONS.download}<span class="vt-hide-sm">Export</span></button>
-          <button type="button" class="vt-btn" id="vt-import" title="Load data from a JSON export">${ICONS.upload}<span class="vt-hide-sm">Import</span></button>
+          <button type="button" class="vt-btn vt-btn-icon" id="vt-more" aria-label="More: export, import, reset" aria-haspopup="menu" aria-expanded="false" title="Export, import, reset">${ICONS.more}</button>
           <input type="file" id="vt-import-file" accept="application/json,.json" hidden aria-hidden="true" tabindex="-1">
           <button type="button" class="vt-btn vt-btn-primary" id="vt-new">${ICONS.plus}New <span class="vt-hide-sm">episode</span></button>
         </div>
@@ -1267,50 +1255,33 @@ function renderOverview(view) {
   const animate = ui.lastRenderedView !== 'overview';
   const fade = (i) => (animate ? `class="vt-fade-in" style="--i:${i}"` : '');
 
-  const stat = (label, value, sub, color, i) => `
+  const stat = (label, value, color, i) => `
     <article class="vt-glass vt-stat ${animate ? 'vt-fade-in' : ''}" style="--i:${i}; --c:${color}">
       <div class="vt-stat-label"><span class="vt-dot"></span>${esc(label)}</div>
       <div class="vt-stat-num">${value}</div>
-      <div class="vt-stat-sub">${esc(sub)}</div>
       <div class="vt-bar"><span data-width="${Math.round((value / total) * 100)}%"></span></div>
     </article>`;
 
-  const attention = onMe
-    .slice()
-    .sort((a, b) => (!!b.ep.blocked - !!a.ep.blocked) || (lastChangeAt(a.ep) - lastChangeAt(b.ep)))
-    .map(({ ep, client }) => {
-      const s = stageOf(ep);
-      const d = daysSince(lastChangeAt(ep));
-      return `
-        <li>
-          <button type="button" class="vt-row" data-open="${esc(ep.id)}" aria-label="${esc(epName(ep, client))}, ${esc(s.label)}${ep.blocked ? ', blocked: ' + esc(ep.blocked.reason) : ''}, last change ${esc(fmtRelative(lastChangeAt(ep)))}">
-            <span class="vt-dot" style="--c:${ep.blocked ? 'var(--vt-blocked)' : stageColor(ep.stage)}"></span>
-            <span class="vt-row-main">
-              <span class="vt-row-title">${esc(client.name)}<b>Ep ${ep.number}</b></span>
-              <span class="vt-row-meta">${esc(s.label)} · ${ep.blocked ? esc(ep.blocked.reason) : esc(s.nextAction)}</span>
-            </span>
-            ${ep.blocked ? `<span class="vt-pill vt-pill-blocked">${ICONS.flag}Blocked</span>` : ''}
-            <span class="vt-row-right"><strong>${esc(fmtDays(d))}</strong><span class="vt-row-sub">${d === 0 ? 'last change' : 'since change'}</span></span>
-            ${ICONS.chev}
-          </button>
-        </li>`;
-    }).join('');
-
-  const byClient = Data.getClients().map((client, i) => {
-    const eps = all.filter((x) => x.ep.clientId === client.id).sort((a, b) => b.ep.number - a.ep.number);
-    if (!eps.length && filtersActive()) return '';
+  // One row per thing to do: the action first, the episode second. Blocked ones sit in their own group.
+  const row = ({ ep, client }) => {
+    const s = stageOf(ep);
+    const d = daysSince(lastChangeAt(ep));
+    const action = ep.blocked ? ep.blocked.reason : s.nextAction;
     return `
-      <section class="vt-glass vt-client-card ${animate ? 'vt-fade-in' : ''}" style="--i:${i + 6}" aria-label="${esc(client.name)} episodes">
-        <div class="vt-panel-head"><h2>${esc(client.name)}</h2><span class="vt-count">${eps.length}<span class="vt-sr"> ${epWord(eps.length)}</span></span></div>
-        ${eps.length ? `<ul>${eps.map(({ ep }) => `
-          <li><button type="button" class="vt-mini" data-open="${esc(ep.id)}">
-            <span class="vt-dot" style="--c:${stageColor(ep.stage)}"></span>
-            <b>Ep ${ep.number}</b>
-            <span class="vt-mini-stage">${esc(stageOf(ep).label)}${ep.blocked ? ' · <span class="vt-pill vt-pill-blocked">Blocked</span>' : ''}</span>
-            <span class="vt-muted">${esc(fmtDaysShort(daysSince(stageEnteredAt(ep))))}</span>
-          </button></li>`).join('')}</ul>` : `<div class="vt-empty">No episodes yet</div>`}
-      </section>`;
-  }).join('');
+      <li>
+        <button type="button" class="vt-row" data-open="${esc(ep.id)}" aria-label="${esc(action)}: ${esc(epName(ep, client))}, ${esc(s.label)}, ${esc(fmtDays(d))} since the last change">
+          <span class="vt-dot" style="--c:${ep.blocked ? 'var(--vt-blocked)' : stageColor(ep.stage)}"></span>
+          <span class="vt-row-main">
+            <span class="vt-row-title">${esc(action)}</span>
+            <span class="vt-row-meta">${esc(client.name)} · Ep ${ep.number} · ${esc(s.label)}</span>
+          </span>
+          <span class="vt-row-days" aria-hidden="true">${esc(fmtDaysShort(d))}</span>
+        </button>
+      </li>`;
+  };
+  const byAge = (a, b) => lastChangeAt(a.ep) - lastChangeAt(b.ep);
+  const blockedRows = onMe.filter((x) => x.ep.blocked).sort(byAge).map(row).join('');
+  const todoRows = onMe.filter((x) => !x.ep.blocked).sort(byAge).map(row).join('');
 
   const subtitle = [
     `${open.length} ${epWord(open.length)} in flight`,
@@ -1328,10 +1299,10 @@ function renderOverview(view) {
     </section>
 
     <section class="vt-summary" aria-label="Summary">
-      ${stat('In progress', open.length, `of ${all.length} ${epWord(all.length)}`, 'var(--vt-stage-5)', 1)}
-      ${stat('Waiting on clients', onClients.length, 'footage not in yet', 'var(--vt-stage-3)', 2)}
-      ${stat('Waiting on me', onMe.length, onMe.filter((x) => x.ep.blocked).length ? `${onMe.filter((x) => x.ep.blocked).length} blocked` : 'nothing blocked', 'var(--vt-stage-6)', 3)}
-      ${stat('Delivered this week', delivered.length, `approved in the last ${CONFIG.deliveredWindowDays} days`, 'var(--vt-stage-7)', 4)}
+      ${stat('In progress', open.length, 'var(--vt-stage-5)', 1)}
+      ${stat('Waiting on clients', onClients.length, 'var(--vt-stage-3)', 2)}
+      ${stat('Waiting on me', onMe.length, 'var(--vt-stage-6)', 3)}
+      ${stat('Delivered this week', delivered.length, 'var(--vt-stage-7)', 4)}
     </section>
 
     <section class="vt-glass vt-panel ${animate ? 'vt-fade-in' : ''}" style="--i:5" aria-labelledby="vt-attention-title">
@@ -1340,16 +1311,13 @@ function renderOverview(view) {
         <span class="vt-count">${onMe.length}<span class="vt-sr"> ${epWord(onMe.length)}</span></span>
         <span class="vt-muted">days since the last change</span>
       </div>
-      ${onMe.length ? `<ul>${attention}</ul>` : `<div class="vt-empty">Nothing is waiting on you right now.</div>`}
+      ${onMe.length ? `
+        ${blockedRows ? `<div class="vt-group is-blocked">${ICONS.flag}Blocked</div><ul>${blockedRows}</ul>` : ''}
+        ${todoRows ? `${blockedRows ? '<div class="vt-group">Up to you</div>' : ''}<ul>${todoRows}</ul>` : ''}
+      ` : `<div class="vt-empty">Nothing is waiting on you right now.</div>`}
+      <div class="vt-panel-foot"><button type="button" class="vt-btn vt-btn-ghost" data-view="board">All ${all.length} ${epWord(all.length)} on the board${ICONS.chev}</button></div>
     </section>
-
-    <section class="vt-clients" aria-label="All clients">${byClient}</section>
-
-    <footer class="vt-foot">
-      <span>Stored in this browser${Data.storageOk() ? '' : ' (storage unavailable, changes will not persist)'}</span>
-      <span aria-hidden="true">·</span>
-      <button type="button" data-action="reset-seed">Reset sample data</button>
-    </footer>`;
+    ${Data.storageOk() ? '' : '<p class="vt-storage-note">Storage is unavailable in this browser, so changes will not be kept.</p>'}`;
 
   // Let the progress fills animate in from zero.
   requestAnimationFrame(() => $$('.vt-bar > span[data-width]', view).forEach((b) => { b.style.width = b.dataset.width; }));
@@ -1814,21 +1782,33 @@ function bindSheet() {
 function openMoveMenu(episodeId, anchor) {
   const ep = Data.getEpisode(episodeId);
   if (!ep) return;
-  const menu = $('#vt-menu', ui.root);
   const client = Data.getClient(ep.clientId);
-  menu.setAttribute('aria-label', `Move ${epName(ep, client)} to`);
-  menu.innerHTML = `
-    <div class="vt-menu-title" aria-hidden="true">Move ${esc(epName(ep, client))} to</div>
-    ${STAGES.map((s) => {
-      const current = s.id === ep.stage;
-      const disabled = s.id === FINAL_STAGE && !canTickFeedback(ep.stage);
-      return `<button type="button" class="vt-menu-item" role="menuitemradio" data-stage="${s.id}" aria-checked="${current}" ${disabled ? 'aria-disabled="true"' : ''} ${disabled ? `title="Approve the episode first"` : ''}>
-        <span class="vt-dot" style="--c:${stageColor(s.id)}"></span>${esc(s.label)}
-        ${current ? ICONS.check : s.id === FINAL_STAGE ? '<span class="vt-muted">manual tick</span>' : ''}
-      </button>`;
-    }).join('')}`;
+  const items = STAGES.map((s) => {
+    const current = s.id === ep.stage;
+    const disabled = s.id === FINAL_STAGE && !canTickFeedback(ep.stage);
+    return `<button type="button" class="vt-menu-item" role="menuitemradio" data-stage="${s.id}" aria-checked="${current}" ${disabled ? 'aria-disabled="true" title="Approve the episode first"' : ''}>
+      <span class="vt-dot" style="--c:${stageColor(s.id)}"></span>${esc(s.label)}
+      ${current ? ICONS.check : s.id === FINAL_STAGE ? '<span class="vt-muted">manual tick</span>' : ''}
+    </button>`;
+  }).join('');
+  openMenu(anchor, { kind: 'move', episodeId, label: `Move ${epName(ep, client)} to`, items });
+}
+
+/* The ⋯ menu in the header: the rarely used things live here so the header stays calm. */
+function openMoreMenu(anchor) {
+  const items = `
+    <button type="button" class="vt-menu-item" role="menuitem" data-more="export">${ICONS.download}Export JSON</button>
+    <button type="button" class="vt-menu-item" role="menuitem" data-more="import">${ICONS.upload}Import JSON</button>
+    <button type="button" class="vt-menu-item" role="menuitem" data-more="reset">Reset sample data</button>`;
+  openMenu(anchor, { kind: 'more', label: 'More', items });
+}
+
+function openMenu(anchor, { kind, episodeId = null, label, items }) {
+  const menu = $('#vt-menu', ui.root);
+  menu.setAttribute('aria-label', label);
+  menu.innerHTML = `<div class="vt-menu-title" aria-hidden="true">${esc(label)}</div>${items}`;
   menu.hidden = false;
-  ui.menu = { episodeId, anchor, openedAt: performance.now() };
+  ui.menu = { kind, episodeId, anchor, openedAt: performance.now() };
 
   // Position near the anchor, clamped to the viewport.
   const r = anchor.getBoundingClientRect();
@@ -1840,8 +1820,8 @@ function openMoveMenu(episodeId, anchor) {
   menu.style.left = `${left}px`; menu.style.top = `${top}px`;
   anchor.setAttribute('aria-expanded', 'true');
 
-  const items = $$('.vt-menu-item', menu);
-  (items.find((b) => b.getAttribute('aria-checked') === 'true') || items[0]).focus();
+  const buttons = $$('.vt-menu-item', menu);
+  (buttons.find((b) => b.getAttribute('aria-checked') === 'true') || buttons[0]).focus();
 }
 
 function closeMoveMenu() {
@@ -1858,9 +1838,12 @@ function bindMoveMenu() {
   menu.addEventListener('click', (e) => {
     const item = e.target.closest('.vt-menu-item');
     if (!item || item.getAttribute('aria-disabled') === 'true') return;
-    const { episodeId } = ui.menu;
+    const { kind, episodeId } = ui.menu;
     closeMoveMenu();
-    moveEpisode(episodeId, item.dataset.stage);
+    if (kind === 'move') { moveEpisode(episodeId, item.dataset.stage); return; }
+    if (item.dataset.more === 'export') exportData();
+    else if (item.dataset.more === 'import') $('#vt-import-file', ui.root).click();
+    else if (item.dataset.more === 'reset') resetSampleData();
   });
   menu.addEventListener('keydown', (e) => {
     const items = $$('.vt-menu-item', menu);
@@ -2042,6 +2025,10 @@ function toggleTheme() {
 /* =============================================================================
    §14  EXPORT / IMPORT
    ============================================================================= */
+function resetSampleData() {
+  confirmDialog({ title: 'Reset to sample data?', body: 'This replaces everything in the tracker with the built-in sample clients and episodes.', okLabel: 'Reset', danger: true })
+    .then((ok) => { if (ok) { Data.resetToSeed(); toast('Sample data restored'); } });
+}
 function exportData() {
   const payload = Data.exportJSON();
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -2149,8 +2136,7 @@ function bindEvents() {
   // Header actions
   $('#vt-theme', root).addEventListener('click', toggleTheme);
   $('#vt-new', root).addEventListener('click', openNewEpisodeDialog);
-  $('#vt-export', root).addEventListener('click', exportData);
-  $('#vt-import', root).addEventListener('click', () => $('#vt-import-file', root).click());
+  $('#vt-more', root).addEventListener('click', (e) => openMoreMenu(e.currentTarget));
   $('#vt-import-file', root).addEventListener('change', (e) => { importDataFromFile(e.target.files[0]); e.target.value = ''; });
 
   // Main view: open sheet, card menus, footer actions
@@ -2161,11 +2147,10 @@ function bindEvents() {
     if (open) { openSheet(open.dataset.open); return; }
     const card = e.target.closest('[data-card]');   // the rest of a board card opens the sheet too (mouse convenience)
     if (card && !e.target.closest('button, a')) { openSheet(card.dataset.card); return; }
+    const goView = e.target.closest('[data-view]');
+    if (goView) { setView(goView.dataset.view); return; }
     const action = e.target.closest('[data-action]');
-    if (action && action.dataset.action === 'reset-seed') {
-      confirmDialog({ title: 'Reset to sample data?', body: 'This replaces everything in the tracker with the built-in sample clients and episodes.', okLabel: 'Reset', danger: true })
-        .then((ok) => { if (ok) { Data.resetToSeed(); toast('Sample data restored'); } });
-    }
+    if (action && action.dataset.action === 'reset-seed') resetSampleData();
   });
   bindDragAndDrop(view);
   bindSheet();
