@@ -280,6 +280,7 @@ function startLive() {
     on('vt_episodes', e => { if (!(e.eventType !== 'DELETE' && vtSaveT[e.new.id])) upsert(D.episodes, e); });
     on('vt_activity', e => { if (e.eventType !== 'DELETE' && !D.vact.some(a => a.id === e.new.id)) D.vact.unshift(e.new); });
   on('vt_stats', e => upsert(D.stats, e));
+  if (S.admin) on('funnel_leads', () => { FN.at = 0; });
   }
   live.subscribe();
 }
@@ -1833,7 +1834,8 @@ function vtPerf() {
   if (!D.stats.length) {
     const cand = vtSorted(D.episodes.filter(e => VT_IDX[e.stage] >= VT_IDX.approved))[0] || vtSorted(D.episodes)[0];
     return `<div class="toolbar">${rangeSeg}</div><div class="card vt-pf-empty">${empty('No numbers yet', 'Once a video is posted, open its episode and add the views, likes, comments, shares and saves per platform. This page then shows what’s working by episode, client, platform and month.')}
-      ${cand ? `<button class="btn primary" style="margin-top:14px" data-act="vtStat" data-id="${cand.id}">${I.plus}Add numbers for ${esc(vtName(cand))}</button>` : ''}</div>`;
+      ${cand ? `<button class="btn primary" style="margin-top:14px" data-act="vtStat" data-id="${cand.id}">${I.plus}Add numbers for ${esc(vtName(cand))}</button>` : ''}</div>
+      <div class="pgrid" style="margin-top:16px">${vtFunnelCards()}</div>`;
   }
   const byEp = Object.values(vtGroup(rows, r => r.ep.id)).map(g => ({ ep: g[0].ep, rows: g, views: sum(g.map(r => r.s.views)), eng: engOf(g.map(r => r.s)) })).sort((a, b) => b.views - a.views);
   const topMax = byEp[0]?.views || 0, shownEps = S.vtTopAll ? byEp : byEp.slice(0, 8);
@@ -1852,11 +1854,12 @@ function vtPerf() {
       ${rows.length ? vtMonthChart(months, byMonth) + vtMonthTable(months, byMonth) : `<div class="empty">Nothing posted in this range.</div>`}</section>
     <section class="card s5"><div class="card-head"><div><h3>${I.sparkle}What’s working</h3><div class="sub">Read from the numbers in this range</div></div></div>
       ${vtWorking(rows, months, byMonth) || '<div class="empty">Add a few more posts and patterns will show here.</div>'}</section>
+    ${vtFunnelCards()}
     <section class="card s7"><div class="card-head"><div><h3>Top episodes</h3><div class="sub">All platforms added together</div></div></div>
       ${shownEps.map((x, i) => vtRankRow(i + 1, `${esc(portal(x.ep.portal_id)?.name || '')} · ${esc(vtName(x.ep).replace(/^.*· /, ''))}${x.ep.title ? ` <span class="muted" style="font-weight:500">${esc(x.ep.title)}</span>` : ''}`,
         `${x.rows.map(r => VT_PLATFORMS[r.s.platform]).join(', ')} · ${pct1(x.eng)} engagement${x.rows[0].s.posted ? ' · ' + fmtD(x.rows.map(r => r.s.posted).filter(Boolean).sort()[0]) : ''}`, x.views, topMax, `data-act="vtOpen" data-id="${x.ep.id}"`, 'views')).join('') || '<div class="empty">Nothing in this range.</div>'}
       ${byEp.length > 8 ? `<button class="more ${S.vtTopAll ? 'open' : ''}" data-act="vtTopAll">${I.right}${S.vtTopAll ? 'Show fewer' : `All ${byEp.length} episodes`}</button>` : ''}</section>
-    <div class="s5" style="display:grid;gap:16px">
+    <div class="s5 vt-stack">
       <section class="card"><div class="card-head"><div><h3>By platform</h3><div class="sub">Where the views come from</div></div></div>
         ${plats.map((x, i) => vtRankRow(vtPlatMark(x.k), VT_PLATFORMS[x.k], `${x.t.posts} post${x.t.posts === 1 ? '' : 's'} · ${fmtN(x.t.avg)} per post · ${pct1(x.t.eng)} engagement`, x.t.views, pmax, '', 'views')).join('') || '<div class="empty">Nothing in this range.</div>'}</section>
       ${S.vtClient === 'all' && clis.length > 1 ? `<section class="card"><div class="card-head"><div><h3>By client</h3><div class="sub">Average per post is the fair comparison</div></div></div>
@@ -1864,6 +1867,79 @@ function vtPerf() {
     </div>
   </div>`;
 }
+/* ---------- FUNNEL (leads and calls booked per week, read live from the funnel tables) ----------
+   Nothing is copied: the rows are fetched when the Performance view shows, kept for a minute, and refreshed
+   when the funnel changes. A client is linked to a funnel through their portal email. */
+const FN = { at: 0, key: '', rows: null, clients: [], admins: [], loading: null, error: '' };
+const FN_TEST = l => (l.email || '').trim().toLowerCase() === 'delivered@resend.dev' || (l.name || '').trim() === 'Test Lead';
+const ukDay = iso => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+const ukWeek = iso => mondayOf(ukDay(iso));
+/* the Mondays (UK) covering the chosen range, oldest first, at most a year */
+function vtWeeks() {
+  const months = vtRangeMonths(), out = [];
+  for (let k = mondayOf(months[0] + '-01'), last = mondayOf(); k <= last && out.length < 60; k = addDays(k, 7)) out.push(k);
+  return out.slice(-52);
+}
+function vtFunnelSlug(p) {
+  const emails = (D.access[p.id] || []).map(e => e.toLowerCase());
+  const c = FN.clients.find(c => emails.includes((c.owner_email || '').toLowerCase()));
+  if (c) return c.slug;
+  return FN.admins.find(a => a.client_slug && a.client_slug !== '*' && emails.includes((a.email || '').toLowerCase()))?.client_slug || null;
+}
+async function vtFunnelLoad() {
+  const weeks = vtWeeks(), key = weeks[0] + ':' + weeks.length;
+  if (FN.loading && FN.key === key) return FN.loading;
+  FN.key = key;
+  const since = new Date(parseD(addDays(weeks[0], -7 * weeks.length)).getTime() - 864e5).toISOString();
+  FN.loading = (async () => {
+    const [c, a, l] = await Promise.all([
+      sb.from('funnel_clients').select('slug,name,owner_email,status'),
+      sb.from('funnel_admins').select('email,client_slug'),
+      sb.from('funnel_leads').select('client_slug,created_at,call_booked_at,call_canceled,email,name').or(`created_at.gte.${since},call_booked_at.gte.${since}`).limit(5000),
+    ]);
+    FN.error = c.error?.message || l.error?.message || '';
+    FN.clients = c.data || []; FN.admins = a.error ? [] : a.data || [];
+    FN.rows = FN.error ? FN.rows || [] : (l.data || []).filter(x => !FN_TEST(x));
+    FN.at = Date.now(); FN.loading = null;
+    return FN;
+  })();
+  return FN.loading;
+}
+function vtWeekChart(weeks, counts, label, both) {
+  const peak = Math.max(...counts.leads, ...counts.calls, 1), max = peak <= 10 ? Math.max(2, Math.ceil(peak / 2) * 2) : niceMax(peak), every = Math.ceil(weeks.length / 8), wk = mondayOf();
+  const vals = counts[label === 'Leads' ? 'leads' : 'calls'];
+  return `<div class="chart vt-chart vt-wk ${weeks.length > 14 ? 'dense' : ''}" role="img" aria-label="${label} per week"><div class="grid">${[0, .5, 1].map(f => `<div class="gl ${f ? '' : 'zero'}" style="bottom:${f * 100}%"><span>${fmtN(max * f)}</span></div>`).join('')}</div>
+    <div class="cols">${weeks.map((k, i) => `<div class="col ${k === wk ? 'now' : ''} ${i < weeks.length / 2 ? 'l' : 'r'}" tabindex="0" aria-label="Week of ${fmtD(k, { day: 'numeric', month: 'long' })}: ${vals[i]} ${label.toLowerCase()}"><div class="bar i" style="height:${vals[i] / max * 100}%;animation-delay:${i * 25}ms"></div>
+        <div class="tip chrome"><b>Week of ${fmtD(k, { day: 'numeric', month: 'long', year: 'numeric' })}</b><div><span>Leads</span><span>${counts.leads[i]}</span></div><div><span>Calls booked</span><span>${counts.calls[i]}</span></div>${both && counts.leads[i] ? `<div><span>Book a call</span><span>${pct1(counts.calls[i] / counts.leads[i])}</span></div>` : ''}</div>
+        <div class="ml">${i % every === (weeks.length - 1) % every ? fmtD(k) : ''}</div></div>`).join('')}</div></div>`;
+}
+function vtFunnelCards() {
+  const weeks = vtWeeks(), key = weeks[0] + ':' + weeks.length, stale = !FN.rows || FN.key !== key || Date.now() - FN.at > 60000;
+  if (stale && !(FN.loading && FN.key === key)) vtFunnelLoad().then(() => { const el = $('#vt-funnel'); if (el && S.vtView === 'perf') { el.outerHTML = vtFunnelCards(); } }).catch(() => {});
+  const card = (title, sub, body, cls = '') => `<section class="card s6 vt-fn ${cls} ${stale && FN.rows ? 'stale' : ''}"><div class="card-head"><div><h3>${title}</h3><div class="sub">${sub}</div></div></div>${body}</section>`;
+  const wrap = h => `<div id="vt-funnel" style="display:contents">${h}</div>`;
+  if (!FN.rows) return wrap(card('Leads per week', FN.error ? 'Couldn’t read the funnel' : 'Loading from the funnel…', `<div class="empty">${FN.error ? esc(FN.error) : '…'}</div>`) + card('Calls booked per week', FN.error ? 'Couldn’t read the funnel' : 'Loading from the funnel…', `<div class="empty">${FN.error ? esc(FN.error) : '…'}</div>`));
+  const ps = (S.vtClient === 'all' ? sortedPortals() : [portal(S.vtClient)].filter(Boolean)), linked = ps.map(p => ({ p, slug: vtFunnelSlug(p) })).filter(x => x.slug);
+  if (!linked.length) {
+    const msg = S.vtClient === 'all' ? empty('No funnel yet', 'None of your clients has a funnel linked. A client links up when their portal email matches the funnel’s owner.') : empty('No funnel yet', `${esc(ps[0]?.name || 'This client')} doesn’t have a funnel on stanmedia.uk yet.`);
+    return wrap(card('Leads per week', 'Mon to Sun, UK time', msg) + card('Calls booked per week', 'Booked that week, cancellations left out', msg));
+  }
+  const slugs = new Set(linked.map(x => x.slug)), rows = FN.rows.filter(r => slugs.has(r.client_slug)), idx = Object.fromEntries(weeks.map((k, i) => [k, i]));
+  const counts = { leads: weeks.map(() => 0), calls: weeks.map(() => 0) }, prev = { leads: 0, calls: 0 };
+  const prevFrom = addDays(weeks[0], -7 * weeks.length);
+  rows.forEach(r => {
+    const lw = ukWeek(r.created_at); if (lw in idx) counts.leads[idx[lw]]++; else if (lw >= prevFrom && lw < weeks[0]) prev.leads++;
+    if (r.call_booked_at && r.call_canceled !== true) { const cw = ukWeek(r.call_booked_at); if (cw in idx) counts.calls[idx[cw]]++; else if (cw >= prevFrom && cw < weeks[0]) prev.calls++; }
+  });
+  const L = sum(counts.leads), C = sum(counts.calls), who = S.vtClient === 'all' ? `${linked.length} of ${ps.length} client${ps.length === 1 ? '' : 's'} linked` : esc(FN.clients.find(c => c.slug === linked[0].slug)?.name || linked[0].slug);
+  const tot = (v, p, w) => `<div class="vt-fn-tot"><b>${fmtN(v)}</b><span>${w}${vtDelta(v, p) ? ' · ' + vtDelta(v, p) + ` <span class="muted">vs the ${weeks.length} weeks before</span>` : ''}</span></div>`;
+  const table = S.vtFnTable ? `<table class="vt-table"><caption class="sr">Leads and calls booked by week</caption><thead><tr><th scope="col">Week of</th><th scope="col">Leads</th><th scope="col">Calls booked</th><th scope="col">Book a call</th></tr></thead><tbody>${[...weeks].reverse().map(k => { const i = idx[k]; return `<tr class="${k === mondayOf() ? 'now' : ''}"><td>${fmtD(k, { day: 'numeric', month: 'short', year: 'numeric' })}</td><td>${counts.leads[i]}</td><td>${counts.calls[i]}</td><td>${counts.leads[i] ? pct1(counts.calls[i] / counts.leads[i]) : '—'}</td></tr>`; }).join('')}</tbody></table>` : '';
+  return wrap(
+    card('Leads per week', `Mon to Sun, UK time · ${who}`, tot(L, prev.leads, `lead${L === 1 ? '' : 's'} in ${weeks.length} weeks`) + vtWeekChart(weeks, counts, 'Leads', true)
+      + `<button class="more ${S.vtFnTable ? 'open' : ''}" data-act="vtFnTable">${I.right}${S.vtFnTable ? 'Hide the weeks' : 'Week by week'}</button>${table}`)
+    + card('Calls booked per week', `Booked that week, cancellations left out · ${L ? pct1(C / L) + ' of leads book' : who}`, tot(C, prev.calls, `call${C === 1 ? '' : 's'} booked in ${weeks.length} weeks`) + vtWeekChart(weeks, counts, 'Calls booked', true)));
+}
+
 /* episode sheet: the numbers per platform */
 function vtSheetStats(ep) {
   const st = statsFor(ep).sort((a, b) => (+b.views || 0) - (+a.views || 0)), total = sum(st.map(s => s.views));
@@ -2075,6 +2151,7 @@ const A = {
   vtRange: el => { S.vtRange = el.dataset.v; lsSet('hub.vtRange', S.vtRange); $('#vtbody').innerHTML = vtBody(); syncSegs(); },
   vtStat: el => { closeMenu(); const ep = vtEp(el.dataset.id); if (ep) vtStatForm(ep, el.dataset.sid); },
   vtTopAll: () => { S.vtTopAll = !S.vtTopAll; $('#vtbody').innerHTML = vtBody(); syncSegs(); },
+  vtFnTable: () => { S.vtFnTable = !S.vtFnTable; const el = $('#vt-funnel'); if (el) el.outerHTML = vtFunnelCards(); },
   vtNew: el => vtNewEpisode(el.dataset.pid),
   vtMenu: el => vtMenu(el, el.dataset.id),
   vtMove: el => { closeMenu(); const ep = vtEp(el.dataset.id); if (!ep || ep.stage === el.dataset.v) return; const from = ep.stage; vtSetStage(ep, el.dataset.v).then(ok => { if (!ok) return; render(false); if (SH?.kind === 'vtep') redrawSheet(); toast(`${vtName(ep)} → ${VT_STAGES[VT_IDX[ep.stage]].label}`, () => vtSetStage(ep, from)); }); },

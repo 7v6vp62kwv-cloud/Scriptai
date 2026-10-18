@@ -760,3 +760,27 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:0}
 .dp-day:focus-visible{outline:0;box-shadow:0 0 0 2px var(--accent)}
 @media (hover:hover){.dp-day:hover{background:var(--fill)}}
 .dp-foot{display:flex;justify-content:space-between;gap:8px;padding:10px 2px 0}
+
+/* ---------- funnel (leads + calls per week) ---------- */
+.vt-wk .cols{gap:3px}
+.vt-wk .col{border-radius:6px}
+.vt-wk .col{min-width:0}
+.vt-wk .col .bar{width:72%;max-width:18px}
+.vt-wk.dense .col .bar{width:80%;max-width:10px}
+.vt-fn{min-width:0}
+.vt-wk .ml{white-space:nowrap;font-size:11px}
+.vt-wk.dense .ml{font-size:10px}
+.vt-fn-tot{display:flex;align-items:baseline;gap:8px;margin:-4px 0 6px;flex-wrap:wrap}
+.vt-fn-tot b{font-size:26px;letter-spacing:-.03em;line-height:1.1}
+.vt-fn-tot span{font-size:13px;color:var(--muted)}
+.vt-fn.stale .chart,.vt-fn.stale .vt-fn-tot{opacity:.55;transition:opacity .3s}
+.vt-fn .more{margin-top:4px}
+/* week tooltips anchor to the near edge so none can poke past the card */
+.vt-wk .col.l .tip{left:0;right:auto;transform:translate(0,6px) scale(.96)}
+.vt-wk .col.r .tip{left:auto;right:0;transform:translate(0,6px) scale(.96)}
+.vt-wk .col.l:hover .tip,.vt-wk .col.l:focus-visible .tip,.vt-wk .col.r:hover .tip,.vt-wk .col.r:focus-visible .tip{transform:none}
+.vt-chart .col:not(:hover):not(:focus-visible) .tip{display:none}
+/* narrow phones: the month table's comparison column goes, the rest stays readable */
+@media (max-width:420px){.vt-table th:nth-child(6),.vt-table td:nth-child(6){display:none}.vt-table td,.vt-table th{padding:7px 4px}}
+.vt-stack{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);min-width:0}
+.vt-stack > .card{min-width:0}
